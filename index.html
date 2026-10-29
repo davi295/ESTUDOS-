@@ -341,12 +341,10 @@ section[hidden]{display:none}
   </section>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/dist/umd/supabase.js"></script>
+<script src="config.js"></script>
 <script>
-/* ==== CONFIGURAÇÃO: cole aqui os dados do seu projeto Supabase (Project Settings > API) ==== */
-const SUPABASE_URL = "https://SEU-PROJETO.supabase.co";
-const SUPABASE_ANON_KEY = "SUA-CHAVE-ANON-PUBLICA";
-/* ========================================================================================== */
+const {SUPABASE_URL, SUPABASE_ANON_KEY} = window.CONFIG;
 const PLANO = {
   topicos: [
     {id:"bd", p:"A", nome:"Banco de dados e SQL", itens:["Modelo E-R","Mapeamento E-R para relacional","Normalização 1FN a 3FN","DDL","DML","JOINs","GROUP BY e HAVING","Subconsultas"]},
