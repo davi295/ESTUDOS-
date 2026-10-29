@@ -1,0 +1,793 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Painel de Estudos TI</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* Layout: folha de respostas — cabeçalho com o ciclo da semana, abas, linhas de assunto com "bolhas" de status como num gabarito */
+:root{
+  --bg:#EEF1F6; --surface:#FFFFFF; --sunk:#E4E8EF; --ink:#141C2B; --muted:#586477; --line:#D3D9E3;
+  --pen:#1F4FD1; --pen-soft:#DCE5FB; --red:#C2352A; --red-soft:#F8E0DD; --green:#1C7F47; --green-soft:#DAF0E3; --amber:#9A6510; --amber-soft:#F6E9CF;
+  --f-display:"Bricolage Grotesque",ui-sans-serif,system-ui,sans-serif;
+  --f-body:"Atkinson Hyperlegible",ui-sans-serif,system-ui,sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+  --r:10px;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0E131A; --surface:#161D27; --sunk:#1D2532; --ink:#E5EAF2; --muted:#97A3B5; --line:#2A3443;
+  --pen:#86A6FF; --pen-soft:#22305A; --red:#FF8073; --red-soft:#47221F; --green:#55C487; --green-soft:#183A28; --amber:#E7B556; --amber-soft:#3D3019; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0E131A; --surface:#161D27; --sunk:#1D2532; --ink:#E5EAF2; --muted:#97A3B5; --line:#2A3443;
+  --pen:#86A6FF; --pen-soft:#22305A; --red:#FF8073; --red-soft:#47221F; --green:#55C487; --green-soft:#183A28; --amber:#E7B556; --amber-soft:#3D3019; color-scheme:dark}
+
+*{box-sizing:border-box}
+body{margin:0}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.5}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+.wrap{max-width:1080px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 56px}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;margin:0;line-height:1.15}
+h1{font-size:clamp(1.6rem,4vw,2.2rem);font-weight:800;letter-spacing:-.01em}
+h2{font-size:1.25rem;font-weight:800}
+h3{font-size:1rem;font-weight:600}
+.mono,.num{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.muted{color:var(--muted)}
+.eyebrow{font-family:var(--f-mono);font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--pen);outline-offset:2px}
+a{color:var(--pen)}
+
+header.top{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px 24px;margin-bottom:18px}
+.top .sub{color:var(--muted);margin-top:4px}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:999px;font-size:.8rem;font-weight:700;background:var(--sunk);color:var(--muted);white-space:nowrap}
+.chip.pen{background:var(--pen-soft);color:var(--pen)}
+.chip.green{background:var(--green-soft);color:var(--green)}
+.chip.amber{background:var(--amber-soft);color:var(--amber)}
+.chip.red{background:var(--red-soft);color:var(--red)}
+
+nav.tabs{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);display:flex;gap:4px;overflow-x:auto;border-bottom:1px solid var(--line);margin-bottom:20px;scrollbar-width:none}
+nav.tabs a{padding:10px 14px;text-decoration:none;color:var(--muted);font-weight:700;border-bottom:3px solid transparent;white-space:nowrap}
+nav.tabs a[aria-current="page"]{color:var(--ink);border-bottom-color:var(--pen)}
+nav.tabs .badge{font-family:var(--f-mono);font-size:.72rem;background:var(--red);color:var(--surface);border-radius:999px;padding:0 6px;margin-left:4px}
+
+.banner{background:var(--amber-soft);color:var(--amber);border-radius:var(--r);padding:10px 14px;margin-bottom:16px;font-weight:700}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:18px}
+.stack{display:flex;flex-direction:column;gap:16px}
+.grid2{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:16px;align-items:start}
+@media (max-width:820px){.grid2{grid-template-columns:minmax(0,1fr)}}
+
+/* ciclo da semana */
+.cycle{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:6px;margin-top:12px}
+@media (max-width:560px){.cycle{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.slot{border:1px solid var(--line);border-radius:8px;padding:8px;min-height:74px;display:flex;flex-direction:column;gap:4px;background:var(--surface)}
+.slot .n{font-family:var(--f-mono);font-size:.72rem;color:var(--muted);display:flex;justify-content:space-between}
+.slot .t{font-size:.82rem;line-height:1.25}
+.slot.done{background:var(--green-soft);border-color:transparent}
+.slot.done .n{color:var(--green)}
+.slot.next{border:2px solid var(--pen)}
+
+.next-card .titulo{font-family:var(--f-display);font-size:1.5rem;font-weight:800;margin:4px 0 2px}
+.steps{list-style:none;padding:0;margin:14px 0 0;display:flex;flex-direction:column;gap:6px}
+.steps li{display:grid;grid-template-columns:76px 1fr;gap:10px;padding:7px 10px;border-radius:8px;background:var(--sunk);font-size:.9rem}
+.steps li .mono{color:var(--muted)}
+.steps li.on{background:var(--pen-soft)}
+.steps li.on .mono{color:var(--pen)}
+.timer{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:14px}
+.timer .clock{font-family:var(--f-mono);font-size:1.8rem;font-weight:700;min-width:5ch}
+
+.tiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+@media (max-width:700px){.tiles{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.tile{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px}
+.tile .v{font-family:var(--f-mono);font-size:1.45rem;font-weight:700;font-variant-numeric:tabular-nums}
+.tile .l{font-size:.8rem;color:var(--muted)}
+
+/* forms */
+form .row{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px}
+label.f{display:flex;flex-direction:column;gap:4px;font-size:.8rem;color:var(--muted);font-weight:700;min-width:0}
+input[type=text],input[type=number],input[type=date],select,textarea{width:100%;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px;color:var(--ink);font-weight:400;font-size:.95rem}
+textarea{resize:vertical;min-height:64px}
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer}
+.btn:hover{border-color:var(--pen)}
+.btn.primary{background:var(--pen);border-color:var(--pen);color:var(--surface)}
+.btn.small{padding:4px 10px;font-size:.82rem}
+.btn.ghost{background:transparent;border-color:transparent;color:var(--muted)}
+.btn.ghost:hover{color:var(--red)}
+.formfoot{display:flex;align-items:center;gap:12px;margin-top:12px;flex-wrap:wrap}
+.toast{font-size:.85rem;color:var(--green);font-weight:700}
+
+/* assuntos */
+.filters{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+.filters button{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:5px 12px;font-weight:700;font-size:.85rem;cursor:pointer;color:var(--muted)}
+.filters button[aria-pressed="true"]{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+.prio-head{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin:22px 0 8px}
+.prio-head:first-child{margin-top:0}
+.prio-letter{font-family:var(--f-mono);font-weight:700;width:26px;height:26px;border-radius:50%;display:inline-grid;place-items:center;background:var(--ink);color:var(--surface);font-size:.85rem}
+.topics{background:var(--surface);border:1px solid var(--line);border-radius:var(--r)}
+.topic + .topic{border-top:1px solid var(--line)}
+.topic-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px 16px;padding:12px 14px;align-items:center}
+.topic-name{display:flex;align-items:center;gap:8px;background:none;border:0;padding:0;text-align:left;cursor:pointer;font-weight:700;font-size:1rem;min-width:0}
+.topic-name .car{font-family:var(--f-mono);color:var(--muted);transition:transform .15s;display:inline-block;width:1ch}
+.topic.open .car{transform:rotate(90deg)}
+.topic-meta{display:flex;gap:12px;flex-wrap:wrap;font-size:.8rem;color:var(--muted);margin-top:4px}
+.bar{height:5px;background:var(--sunk);border-radius:3px;overflow:hidden;width:80px;display:inline-block;vertical-align:middle}
+.bar i{display:block;height:100%;background:var(--pen)}
+.bubbles{display:flex;gap:4px}
+.bub{width:32px;height:32px;border-radius:50%;border:1.5px solid var(--line);background:var(--surface);font-family:var(--f-mono);font-size:.72rem;font-weight:700;color:var(--muted);cursor:pointer;display:grid;place-items:center}
+.bub:hover{border-color:var(--pen)}
+.bub[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:var(--surface)}
+.bub.s3[aria-pressed="true"]{background:var(--green);border-color:var(--green)}
+.bub.s1[aria-pressed="true"]{background:var(--pen);border-color:var(--pen)}
+.bub.s2[aria-pressed="true"]{background:var(--amber);border-color:var(--amber)}
+.legend{display:flex;gap:12px;flex-wrap:wrap;font-size:.78rem;color:var(--muted);margin-bottom:12px}
+.legend b{font-family:var(--f-mono)}
+.topic-body{padding:0 14px 16px 34px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px}
+@media (max-width:700px){.topic-body{grid-template-columns:minmax(0,1fr);padding-left:14px}}
+.checks{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:2px}
+.checks label{display:flex;gap:8px;align-items:flex-start;padding:4px 6px;border-radius:6px;cursor:pointer}
+.checks label:hover{background:var(--sunk)}
+.checks input{margin-top:4px;accent-color:var(--pen)}
+.checks input:checked + span{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--pen)}
+.minis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:10px}
+.mini{background:var(--sunk);border-radius:8px;padding:8px}
+.mini .v{font-family:var(--f-mono);font-weight:700}
+.mini .l{font-size:.72rem;color:var(--muted)}
+.acc-g{color:var(--green)} .acc-a{color:var(--amber)} .acc-r{color:var(--red)}
+
+/* erros */
+.errs{display:flex;flex-direction:column;gap:10px}
+.err{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px 12px}
+.err.due{border-color:var(--red)}
+.err .q{font-weight:700}
+.err .regra{margin-top:4px}
+.err .regra::before{content:"Regra certa: ";color:var(--green);font-weight:700}
+.revs{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.rev{font-family:var(--f-mono);font-size:.74rem;padding:3px 8px;border-radius:6px;background:var(--sunk);color:var(--muted)}
+.rev.ok{background:var(--green-soft);color:var(--green)}
+.rev.late{background:var(--red-soft);color:var(--red)}
+.empty{border:1.5px dashed var(--line);border-radius:var(--r);padding:22px;text-align:center;color:var(--muted)}
+
+/* tabelas */
+.tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:var(--r);background:var(--surface)}
+table{border-collapse:collapse;width:100%;font-size:.88rem}
+th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-family:var(--f-mono);font-size:.7rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:500;background:var(--sunk)}
+tr:last-child td{border-bottom:0}
+td.num,th.num{text-align:right;font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+
+.conc{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
+.conc .c{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px;display:flex;flex-direction:column;gap:6px}
+.conc .c .h{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}
+.conc dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:2px 10px;font-size:.85rem}
+.conc dt{color:var(--muted)}
+.conc dd{margin:0}
+.sims{display:flex;flex-direction:column;gap:6px}
+.sim{display:grid;grid-template-columns:auto minmax(0,1fr) 120px;gap:10px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:8px 12px}
+.sim input[type=checkbox]{accent-color:var(--green);width:18px;height:18px}
+@media (max-width:480px){.sim{grid-template-columns:auto minmax(0,1fr)}.sim input[type=text]{grid-column:2}}
+section[hidden]{display:none}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap" id="tela-login" hidden>
+  <div style="max-width:380px;margin:8vh auto 0" class="panel">
+    <div class="eyebrow">Concursos de TI</div>
+    <h1 style="margin-bottom:6px">Painel de Estudos TI</h1>
+    <p class="muted" style="margin:0 0 16px">Entre para carregar seu progresso salvo na nuvem.</p>
+    <form id="f-login" class="stack" style="gap:10px">
+      <label class="f">Email<input type="text" id="l-email" autocomplete="username" inputmode="email" required></label>
+      <label class="f">Senha<input type="password" id="l-senha" autocomplete="current-password" minlength="6" required style="width:100%;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px;color:var(--ink)"></label>
+      <div class="formfoot" style="margin-top:4px">
+        <button class="btn primary" type="submit">Entrar</button>
+        <button class="btn" type="button" id="l-criar">Criar conta</button>
+      </div>
+      <div id="l-msg" class="muted" style="font-size:.88rem" aria-live="polite"></div>
+    </form>
+  </div>
+</div>
+<div class="wrap" id="app" hidden>
+  <header class="top">
+    <div>
+      <div class="eyebrow">Concursos de TI · banca de treino Cesgranrio</div>
+      <h1>Painel de Estudos TI</h1>
+      <div class="sub" id="sub-hoje"></div>
+    </div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap" id="head-chips"></div>
+  </header>
+
+  <div class="banner" id="offline" hidden></div>
+  <div class="backup" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:16px">
+    <span class="chip" id="sync">Conectando…</span>
+    <button class="btn small" type="button" id="b-exportar">Exportar backup</button>
+    <label class="btn small" for="b-importar" style="cursor:pointer">Importar backup</label>
+    <input type="file" id="b-importar" accept="application/json,.json" hidden>
+    <span class="toast" id="b-toast" aria-live="polite"></span>
+    <button class="btn ghost small" type="button" id="b-sair" style="margin-left:auto">Sair</button>
+  </div>
+
+  <nav class="tabs" aria-label="Seções">
+    <a href="#hoje" data-tab="hoje">Hoje</a>
+    <a href="#assuntos" data-tab="assuntos">Assuntos</a>
+    <a href="#erros" data-tab="erros">Caderno de erros<span class="badge" id="badge-erros" hidden></span></a>
+    <a href="#historico" data-tab="historico">Histórico</a>
+    <a href="#concursos" data-tab="concursos">Concursos</a>
+  </nav>
+
+  <!-- HOJE -->
+  <section id="tab-hoje" class="stack">
+    <div class="tiles" id="tiles"></div>
+
+    <div class="panel">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap">
+        <h2 id="cycle-title">Ciclo da semana</h2>
+        <span class="muted" style="font-size:.85rem">Perdeu um dia? Faça a sessão que faltou, sem acumular.</span>
+      </div>
+      <div class="cycle" id="cycle"></div>
+    </div>
+
+    <div class="grid2">
+      <div class="panel next-card" id="next-card"></div>
+
+      <div class="panel">
+        <h2>Registrar sessão</h2>
+        <form id="f-sessao" style="margin-top:12px">
+          <div class="row">
+            <label class="f">Data<input type="date" id="s-data" required></label>
+            <label class="f">Sessão do ciclo<select id="s-slot"></select></label>
+          </div>
+          <div class="row" style="margin-top:10px">
+            <label class="f" style="grid-column:1/-1">Assunto<select id="s-topico"></select></label>
+          </div>
+          <div class="row" style="margin-top:10px">
+            <label class="f">Minutos<input type="number" id="s-min" min="1" max="600" value="50" inputmode="numeric"></label>
+            <label class="f">Questões<input type="number" id="s-q" min="0" max="500" value="" placeholder="12" inputmode="numeric"></label>
+            <label class="f">Acertos<input type="number" id="s-a" min="0" max="500" value="" placeholder="9" inputmode="numeric"></label>
+          </div>
+          <div class="formfoot">
+            <button class="btn primary" type="submit">Registrar sessão</button>
+            <span class="toast" id="s-toast" aria-live="polite"></span>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap">
+        <h2>Revisões de erros para hoje</h2>
+        <a href="#erros" class="muted" style="font-size:.85rem">Abrir caderno de erros</a>
+      </div>
+      <div class="errs" id="hoje-erros" style="margin-top:12px"></div>
+    </div>
+  </section>
+
+  <!-- ASSUNTOS -->
+  <section id="tab-assuntos" hidden>
+    <div class="filters" id="f-prio" role="group" aria-label="Filtrar por prioridade">
+      <button type="button" data-p="todas" aria-pressed="true">Todas</button>
+      <button type="button" data-p="A" aria-pressed="false">Prioridade A</button>
+      <button type="button" data-p="B" aria-pressed="false">Prioridade B</button>
+      <button type="button" data-p="C" aria-pressed="false">Prioridade C</button>
+    </div>
+    <div class="legend"><span><b>–</b> não iniciado</span><span><b>E</b> estudando</span><span><b>R</b> revisando</span><span><b>D</b> dominado</span></div>
+    <div id="lista-assuntos"></div>
+  </section>
+
+  <!-- ERROS -->
+  <section id="tab-erros" class="stack" hidden>
+    <div class="panel">
+      <h2>Anotar erro</h2>
+      <p class="muted" style="margin:4px 0 12px;font-size:.9rem">Uma linha por erro. O painel agenda as revisões para 1, 7 e 30 dias depois.</p>
+      <form id="f-erro">
+        <div class="row">
+          <label class="f">Assunto<select id="e-topico"></select></label>
+          <label class="f">Data<input type="date" id="e-data" required></label>
+        </div>
+        <div class="row" style="margin-top:10px">
+          <label class="f">O que confundi<input type="text" id="e-q" required maxlength="400" placeholder="Achei que HAVING filtra antes do GROUP BY"></label>
+        </div>
+        <div class="row" style="margin-top:10px">
+          <label class="f">Regra certa<input type="text" id="e-r" maxlength="400" placeholder="WHERE filtra linhas antes; HAVING filtra grupos depois"></label>
+        </div>
+        <div class="formfoot">
+          <button class="btn primary" type="submit">Anotar erro</button>
+          <span class="toast" id="e-toast" aria-live="polite"></span>
+        </div>
+      </form>
+    </div>
+    <div>
+      <div class="filters" id="f-erros" role="group" aria-label="Filtrar erros">
+        <button type="button" data-e="hoje" aria-pressed="true">Revisar hoje</button>
+        <button type="button" data-e="pend" aria-pressed="false">Com revisão pendente</button>
+        <button type="button" data-e="todos" aria-pressed="false">Todos</button>
+      </div>
+      <div class="errs" id="lista-erros"></div>
+    </div>
+  </section>
+
+  <!-- HISTÓRICO -->
+  <section id="tab-historico" class="stack" hidden>
+    <div>
+      <h2 style="margin-bottom:10px">Por semana</h2>
+      <div class="tablewrap"><table>
+        <thead><tr><th>Semana</th><th class="num">Sessões</th><th class="num">Horas</th><th class="num">Questões</th><th class="num">Acerto</th></tr></thead>
+        <tbody id="t-semanas"></tbody>
+      </table></div>
+    </div>
+    <div>
+      <h2 style="margin-bottom:10px">Sessões registradas</h2>
+      <div class="tablewrap"><table>
+        <thead><tr><th>Data</th><th>Sessão</th><th>Assunto</th><th class="num">Min</th><th class="num">Questões</th><th class="num">Acerto</th><th></th></tr></thead>
+        <tbody id="t-sessoes"></tbody>
+      </table></div>
+    </div>
+  </section>
+
+  <!-- CONCURSOS -->
+  <section id="tab-concursos" class="stack" hidden>
+    <div>
+      <h2>Raio-X dos concursos</h2>
+      <p class="muted" style="margin:4px 0 12px;font-size:.9rem">Situação em out/2026. BB e Caixa são os únicos de TI que aceitam nível médio; o resto entra no radar perto da formatura (fim de 2028).</p>
+      <div class="conc" id="conc"></div>
+    </div>
+    <div>
+      <h2>Provas antigas para simulado</h2>
+      <p class="muted" style="margin:4px 0 12px;font-size:.9rem">Guarde para a Fase 3. Marque quando fizer e anote o resultado.</p>
+      <div class="sims" id="sims"></div>
+    </div>
+  </section>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script>
+/* ==== CONFIGURAÇÃO: cole aqui os dados do seu projeto Supabase (Project Settings > API) ==== */
+const SUPABASE_URL = "https://SEU-PROJETO.supabase.co";
+const SUPABASE_ANON_KEY = "SUA-CHAVE-ANON-PUBLICA";
+/* ========================================================================================== */
+const PLANO = {
+  topicos: [
+    {id:"bd", p:"A", nome:"Banco de dados e SQL", itens:["Modelo E-R","Mapeamento E-R para relacional","Normalização 1FN a 3FN","DDL","DML","JOINs","GROUP BY e HAVING","Subconsultas"]},
+    {id:"java", p:"A", nome:"Java e POO", itens:["Classes e objetos","Herança","Polimorfismo","Interfaces","Exceções","Coleções"]},
+    {id:"python", p:"A", nome:"Python para dados", itens:["Listas","Dicionários","Slicing","Pandas","NumPy","scikit-learn: fit e predict"]},
+    {id:"ed", p:"A", nome:"Estruturas de dados", itens:["Busca sequencial","Busca binária","Bolha","Seleção","Inserção","Pilha","Fila","Lista encadeada","Percursos de árvore binária","Tabela hash (leitura rápida)"]},
+    {id:"es", p:"A", nome:"Engenharia de software e ágil", itens:["Scrum","Kanban","Requisitos","UML","Padrões GoF","Testes","Git","CI/CD e DevOps"]},
+    {id:"port", p:"A", nome:"Português Cesgranrio", itens:["Interpretação de textos","Crase","Pontuação","Concordância","Regência","Colocação pronominal"]},
+    {id:"est", p:"A", nome:"Estatística", itens:["Média, mediana e moda","Variância e desvio padrão","Probabilidade condicional","Teorema de Bayes","Distribuição binomial","Distribuição normal"]},
+    {id:"dw", p:"B", nome:"Data Warehouse, Big Data e NoSQL", itens:["Esquema estrela","Floco de neve","Big Data","NoSQL"]},
+    {id:"arq", p:"B", nome:"Arquitetura: MVC, microsserviços, REST, nuvem", itens:["MVC","Microsserviços","REST","Códigos HTTP","Nuvem"]},
+    {id:"ml", p:"B", nome:"Machine learning", itens:["Supervisionado vs. não supervisionado","PCA","Noções de PLN"]},
+    {id:"seg", p:"B", nome:"Segurança da informação e LGPD", itens:["Segurança da informação","LGPD"]},
+    {id:"mat", p:"B", nome:"Matemática do BB", itens:["Lógica proposicional","Porcentagem","PA e PG","Matrizes"]},
+    {id:"red", p:"B", nome:"Redação", itens:["Treinar 1 redação a cada 2 semanas","Conferir nota mínima e linhas no edital"]},
+    {id:"ing", p:"C", nome:"Inglês", itens:["Fazer 2 ou 3 provas antigas"]},
+    {id:"matfin", p:"C", nome:"Matemática Financeira", itens:["SAC","PRICE"]},
+    {id:"banc", p:"C", nome:"Conhecimentos Bancários e Atualidades do Mercado Financeiro", itens:["Conhecimentos Bancários","Atualidades do Mercado Financeiro"]},
+    {id:"etica", p:"C", nome:"Ética, Compliance e Comportamentos Digitais (Caixa)", itens:["PLD","LGPD","LC 105","Res. CMN 4.893","Comportamentos Digitais"]},
+    {id:"gov", p:"C", nome:"Governança: ITIL 4, COBIT, CMMI", itens:["ITIL 4","COBIT","CMMI"]},
+    {id:"so", p:"C", nome:"SO e arquitetura de computadores", itens:["Sistemas operacionais","Arquitetura de computadores"]},
+    {id:"redes", p:"C", nome:"Redes de computadores", itens:["Redes de computadores"]},
+    {id:"mobile", p:"C", nome:"Mobile: Android, Kotlin, React Native", itens:["Android","Kotlin","React Native"]},
+  ],
+  prioridades: {
+    A:{titulo:"Começa agora", quando:"nov/2026 a jun/2027"},
+    B:{titulo:"Começa em mar/2027", quando:"ganha força no 2º semestre"},
+    C:{titulo:"Só quando o edital sair", quando:"pós-edital"},
+  },
+  ciclo: {
+    A:[{t:"bd",n:"Banco de dados: modelagem e normalização"},{t:"port",n:"Português: interpretação"},{t:"java",n:"Java e POO"},{t:"bd",n:"SQL na prática + questões de BD"},{t:"ed",n:"Estruturas de dados"},{t:"est",n:"Estatística"}],
+    B:[{t:"bd",n:"Banco de dados: modelagem e normalização"},{t:"port",n:"Português: gramática"},{t:"python",n:"Python para dados"},{t:"bd",n:"SQL na prática + questões de BD"},{t:"es",n:"Engenharia de software e ágil"},{t:"red",n:"Redação ou revisão geral dos erros"}],
+  },
+  dias:["seg","ter","qua","qui","sex","sáb"],
+  passos:[
+    {de:0,ate:5,t:"Revise o caderno de erros dos dias anteriores."},
+    {de:5,ate:20,t:"Teoria do tópico com o Gemini: “Explique [tópico] em 10 linhas, como cai na Cesgranrio, com um exemplo.”"},
+    {de:20,ate:45,t:"De 10 a 12 questões do mesmo tópico, filtradas por Cesgranrio."},
+    {de:45,ate:50,t:"Anote cada erro em uma linha: o que confundi e qual é a regra certa."},
+  ],
+  concursos:[
+    {n:"Caixa – Técnico Bancário TI", banca:"Cesgranrio", exige:"Nível médio", agora:true, sit:"Edital de 2024 venceu em ago/2026; novo em estudo", prova:"60 questões: TI 30, Comportamentos Digitais 5, Português 5, Inglês 5, Mat. Financeira 5, Estatística 5, Ética/Compliance 5 + redação"},
+    {n:"BB – Agente de Tecnologia", banca:"Cesgranrio", exige:"Nível médio", agora:true, sit:"Sem edital; em fev/2026 o BB disse que não havia previsão", prova:"70 questões: TI 35 (peso 1,5), Português 10, Inglês 5, Matemática 5, Atualidades 5, Estatística 5, Bancários 5 + redação"},
+    {n:"Banestes – Técnico Bancário", banca:"FCC", exige:"Nível médio", agora:true, sit:"Inscrições até 23/11/2026, prova em 24/01/2027", prova:"70 questões, cargo generalista: só 5 de Informática. Opcional, só como treino de prova real"},
+    {n:"Banestes – Analista de TI", banca:"FCC", exige:"Graduação em TI", agora:false, sit:"Seleção de 2027, homologação até jun/2027", prova:"80 questões previstas; 440 CR em Desenvolvimento"},
+    {n:"Dataprev – Analista de TI", banca:"FGV", exige:"Graduação", agora:false, sit:"Prova aplicada em 11/10/2026; próximo só em alguns anos", prova:"70 questões: 40 gerais (peso 1) + 30 específicas (peso 2,5)"},
+    {n:"Serpro – Analista", banca:"Cebraspe", exige:"Graduação", agora:false, sit:"Concurso de 2023 vigente até nov/2027; sem novo edital", prova:"120 itens Certo/Errado + prova prática de programação"},
+    {n:"Petrobras – Analista de Sistemas", banca:"Cesgranrio", exige:"Graduação", agora:false, sit:"Edital de nível superior aguardado, sem data", prova:"Português, Inglês + 3 blocos de TI"},
+  ],
+  simulados:[
+    {id:"bb2023", n:"BB 2023 – Agente de Tecnologia"},
+    {id:"caixa2024", n:"Caixa 2024 – Técnico Bancário TI"},
+    {id:"caixa2021", n:"Caixa 2021 – Técnico Bancário TI"},
+    {id:"caixa2012", n:"Caixa 2012 – Técnico Bancário TI"},
+    {id:"petro2018", n:"Petrobras 2018 – Analista de Sistemas (nível acima)"},
+  ],
+};
+const TOP = Object.fromEntries(PLANO.topicos.map(t=>[t.id,t]));
+const STATUS = [{k:"–",n:"Não iniciado"},{k:"E",n:"Estudando"},{k:"R",n:"Revisando"},{k:"D",n:"Dominado"}];
+const OFFS = [1,7,30];
+const REF_A = new Date(2026,10,2); // segunda 02/11/2026 = Semana A
+
+const S = {db:null, topicos:{}, sessoes:[], erros:[], simulados:{}, abertos:new Set(), prio:"todas", fErros:"hoje", podeGravar:true};
+
+/* ---------- datas ---------- */
+const pad = n=>String(n).padStart(2,"0");
+const iso = d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+const parse = s=>{const [y,m,d]=s.split("-").map(Number);return new Date(y,m-1,d)};
+const addDias = (s,n)=>{const d=parse(s);d.setDate(d.getDate()+n);return iso(d)};
+const hoje = ()=>iso(new Date());
+const segunda = s=>{const d=parse(s);const w=(d.getDay()+6)%7;d.setDate(d.getDate()-w);return iso(d)};
+const letraSemana = seg=>{const w=Math.round((parse(seg)-REF_A)/(7*864e5));return ((w%2)+2)%2===0?"A":"B"};
+const MESES=["jan","fev","mar","abr","mai","jun","jul","ago","set","out","nov","dez"];
+const curta = s=>{const d=parse(s);return `${pad(d.getDate())} ${MESES[d.getMonth()]}`};
+const DIASEM=["domingo","segunda","terça","quarta","quinta","sexta","sábado"];
+const esc = s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const pct = (a,q)=>q?Math.round(100*a/q):null;
+const accCls = p=>p==null?"":p>=70?"acc-g":p>=50?"acc-a":"acc-r";
+const novoId = ()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+
+/* ---------- gravação: Supabase + cópia no navegador ---------- */
+const CHAVE = "painel-estudos-ti-v1", CHAVE_PEND = "painel-estudos-ti-pendente";
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+let usuario = null, tSalvar = null, enviando = false, deNovo = false, ultimoDiaHist = null;
+const ls = {get:k=>{try{return localStorage.getItem(k)}catch(_){return null}}, set:(k,v)=>{try{localStorage.setItem(k,v)}catch(_){}}, del:k=>{try{localStorage.removeItem(k)}catch(_){}}};
+function setSync(t,cls){ const el=document.getElementById("sync"); el.textContent=t; el.className="chip "+(cls||""); }
+function cacheLocal(){ ls.set(CHAVE, JSON.stringify(dadosAtuais())); }
+const pendente = ()=>ls.get(CHAVE_PEND)==="1";
+function gravar(){
+  cacheLocal(); ls.set(CHAVE_PEND,"1"); setSync("Salvando…","amber");
+  clearTimeout(tSalvar); tSalvar=setTimeout(enviar,800);
+}
+async function enviar(){
+  if(!usuario) return;
+  if(enviando){ deNovo=true; return; }
+  enviando=true;
+  const dados=dadosAtuais(), agora=new Date().toISOString();
+  const {error}=await sb.from("progresso").upsert({user_id:usuario.id, dados, atualizado:agora});
+  if(!error && ultimoDiaHist!==hoje()){
+    const r=await sb.from("progresso_historico").upsert({user_id:usuario.id, dia:hoje(), dados});
+    if(!r.error) ultimoDiaHist=hoje();
+  }
+  enviando=false;
+  if(error) setSync(navigator.onLine?"Erro ao salvar na nuvem · cópia guardada no navegador":"Sem internet · envio quando a conexão voltar","red");
+  else { ls.del(CHAVE_PEND); setSync("Salvo na nuvem","green"); }
+  if(deNovo){ deNovo=false; enviar(); }
+}
+async function baixar(){
+  if(!usuario) return;
+  if(pendente()){ enviar(); return; } // o navegador tem alterações que a nuvem ainda não recebeu
+  const {data,error}=await sb.from("progresso").select("dados,atualizado").eq("user_id",usuario.id).maybeSingle();
+  if(error){ setSync("Sem conexão · mostrando a cópia do navegador","red"); return; }
+  if(data){ aplicarDados(data.dados); cacheLocal(); renderAll(); setSync("Salvo na nuvem","green"); }
+  else { setSync("Conta nova · salvando…","amber"); enviar(); } // primeira vez: sobe o que já houver no navegador
+}
+function dadosAtuais(){ return {versao:1, salvoEm:new Date().toISOString(), topicos:S.topicos, sessoes:S.sessoes, erros:S.erros, simulados:S.simulados}; }
+function aplicarDados(d){
+  S.topicos = d && typeof d.topicos==="object" && d.topicos ? d.topicos : {};
+  S.sessoes = Array.isArray(d?.sessoes) ? d.sessoes : [];
+  S.erros = Array.isArray(d?.erros) ? d.erros : [];
+  S.simulados = d && typeof d.simulados==="object" && d.simulados ? d.simulados : {};
+}
+
+/* ---------- derivados ---------- */
+function statsTopico(id){
+  let q=0,a=0,m=0,ult=null,n=0;
+  for(const s of S.sessoes) if(s.topico===id){q+=s.questoes||0;a+=s.acertos||0;m+=s.minutos||0;n++;if(!ult||s.data>ult)ult=s.data;}
+  return {q,a,m,ult,n};
+}
+function estadoTopico(id){ const d=S.topicos[id]||{}; return {status:d.status||0, itens:d.itens||{}, nota:d.nota||""}; }
+function proxRev(e){ const r=e.revisoes||[]; const idx=OFFS.findIndex((_,i)=>!r[i]); if(idx<0) return null; return {idx, data:addDias(e.data,OFFS[idx])}; }
+function errosHoje(){ const h=hoje(); return S.erros.filter(e=>{const p=proxRev(e);return p&&p.data<=h}); }
+
+/* ---------- render: cabeçalho e Hoje ---------- */
+function renderHeader(){
+  const h=hoje(), d=parse(h), seg=segunda(h), L=letraSemana(seg);
+  document.getElementById("sub-hoje").textContent = `${DIASEM[d.getDay()]}, ${curta(h)} de ${d.getFullYear()} · Semana ${L} · 50 min por dia, 6 dias por semana`;
+  const fase = h < "2026-11-01" ? "Começo: Fase 1 em nov/2026" : h < "2027-03-01" ? "Fase 1 · só Prioridade A" : "Prioridade B liberada";
+  document.getElementById("head-chips").innerHTML = `<span class="chip pen">${fase}</span><span class="chip">Alvo: BB e Caixa</span>`;
+}
+function renderTiles(){
+  const seg=segunda(hoje());
+  const sem=S.sessoes.filter(s=>s.semana===seg);
+  const slotsFeitos=new Set(sem.map(s=>s.slot).filter(Boolean)).size;
+  let q=0,a=0,m=0; for(const s of S.sessoes){q+=s.questoes||0;a+=s.acertos||0;m+=s.minutos||0;}
+  const p=pct(a,q);
+  const pend=errosHoje().length;
+  document.getElementById("tiles").innerHTML = [
+    {v:`${slotsFeitos}/6`, l:"sessões do ciclo nesta semana"},
+    {v:`${(m/60).toFixed(1).replace(".",",")} h`, l:"estudadas no total · meta de 400 a 800 h para nível médio"},
+    {v:q?`${p}%`:"—", l:q?`de acerto em ${q} questões`:"de acerto · registre questões para ver", c:accCls(p)},
+    {v:String(pend), l:pend===1?"erro para revisar hoje":"erros para revisar hoje", c:pend?"acc-r":""},
+  ].map(t=>`<div class="tile"><div class="v ${t.c||""}">${t.v}</div><div class="l">${t.l}</div></div>`).join("");
+}
+function slotsSemana(seg){
+  const L=letraSemana(seg), feitos={};
+  for(const s of S.sessoes) if(s.semana===seg && s.slot) feitos[s.slot]=s;
+  const prox = [1,2,3,4,5,6].find(i=>!feitos[i]) || null;
+  return {L, feitos, prox, itens:PLANO.ciclo[L]};
+}
+function renderCiclo(){
+  const h=hoje(), seg=segunda(h), {L,feitos,prox,itens}=slotsSemana(seg);
+  document.getElementById("cycle-title").textContent = `Semana ${L} · ${curta(seg)} a ${curta(addDias(seg,6))}`;
+  document.getElementById("cycle").innerHTML = itens.map((it,i)=>{
+    const n=i+1, f=feitos[n];
+    return `<div class="slot ${f?"done":""} ${n===prox?"next":""}"><div class="n"><span>${n} · ${PLANO.dias[i]}</span><span>${f?"feita":n===prox?"próxima":""}</span></div><div class="t">${esc(it.n)}</div></div>`;
+  }).join("");
+  const nc=document.getElementById("next-card");
+  if(!prox){
+    nc.innerHTML = `<div class="eyebrow">Ciclo completo</div><div class="titulo">Semana fechada. Domingo é descanso.</div><p class="muted">As 6 sessões da Semana ${L} estão registradas. Na segunda começa a Semana ${L==="A"?"B":"A"}.</p>`;
+  } else {
+    const it=itens[prox-1];
+    nc.innerHTML = `<div class="eyebrow">Próxima sessão · ${prox} de 6</div>
+      <div class="titulo">${esc(it.n)}</div>
+      <div class="muted" style="font-size:.9rem">${esc(TOP[it.t].nome)} · prioridade ${TOP[it.t].p}</div>
+      <ol class="steps" id="steps">${PLANO.passos.map((p,i)=>`<li data-i="${i}"><span class="mono">${p.de}–${p.ate} min</span><span>${esc(p.t)}</span></li>`).join("")}</ol>
+      <div class="timer"><span class="clock" id="clock">50:00</span>
+        <button class="btn primary small" type="button" id="t-go">Iniciar</button>
+        <button class="btn small" type="button" id="t-reset">Zerar</button>
+        <span class="muted" id="t-msg" style="font-size:.85rem"></span></div>`;
+    bindTimer();
+  }
+  // pré-seleciona o formulário
+  const sel=document.getElementById("s-slot");
+  if(!sel.dataset.touched){ sel.value = prox?String(prox):"0"; syncTopicoDoSlot(); }
+}
+function renderFormSessao(){
+  const sel=document.getElementById("s-slot"), L=letraSemana(segunda(document.getElementById("s-data").value||hoje()));
+  const cur=sel.value;
+  sel.innerHTML = PLANO.ciclo[L].map((it,i)=>`<option value="${i+1}">${i+1} · ${esc(it.n)}</option>`).join("")+`<option value="0">Sessão avulsa (fora do ciclo)</option>`;
+  if(cur) sel.value=cur;
+  const opts = ["A","B","C"].map(p=>`<optgroup label="Prioridade ${p}">${PLANO.topicos.filter(t=>t.p===p).map(t=>`<option value="${t.id}">${esc(t.nome)}</option>`).join("")}</optgroup>`).join("");
+  for(const id of ["s-topico","e-topico"]){ const s=document.getElementById(id); const v=s.value; s.innerHTML=opts; if(v) s.value=v; }
+}
+function syncTopicoDoSlot(){
+  const n=Number(document.getElementById("s-slot").value);
+  if(!n) return;
+  const L=letraSemana(segunda(document.getElementById("s-data").value||hoje()));
+  document.getElementById("s-topico").value = PLANO.ciclo[L][n-1].t;
+}
+
+/* ---------- timer de 50 min ---------- */
+const T={rest:50*60, run:false, h:null};
+function bindTimer(){
+  const go=document.getElementById("t-go"), rs=document.getElementById("t-reset");
+  if(!go) return;
+  go.onclick=()=>{ T.run?pararTimer():iniciarTimer(); };
+  rs.onclick=()=>{ pararTimer(); T.rest=50*60; desenharTimer(); document.getElementById("t-msg").textContent=""; };
+  desenharTimer();
+}
+function iniciarTimer(){ if(T.rest<=0) T.rest=50*60; T.run=true; const fim=Date.now()+T.rest*1000; T.h=setInterval(()=>{T.rest=Math.max(0,Math.round((fim-Date.now())/1000)); desenharTimer(); if(T.rest<=0){pararTimer(); const m=document.getElementById("t-msg"); if(m) m.textContent="Sessão concluída. Registre ao lado.";}},500); desenharTimer(); }
+function pararTimer(){ T.run=false; clearInterval(T.h); desenharTimer(); }
+function desenharTimer(){
+  const c=document.getElementById("clock"); if(!c) return;
+  c.textContent=`${pad(Math.floor(T.rest/60))}:${pad(T.rest%60)}`;
+  document.getElementById("t-go").textContent = T.run?"Pausar":(T.rest<50*60&&T.rest>0?"Continuar":"Iniciar");
+  const passado=(50*60-T.rest)/60;
+  document.querySelectorAll("#steps li").forEach((li,i)=>{const p=PLANO.passos[i]; li.classList.toggle("on", (T.run||T.rest<50*60) && passado>=p.de && passado<p.ate);});
+}
+
+/* ---------- erros ---------- */
+function htmlErro(e, compacto){
+  const p=proxRev(e), h=hoje(), due=p&&p.data<=h;
+  const revs = OFFS.map((o,i)=>{const d=addDias(e.data,o), ok=(e.revisoes||[])[i]; const late=!ok&&d<h; return `<span class="rev ${ok?"ok":late?"late":""}">D+${o} · ${curta(d)}${ok?" ✓":""}</span>`}).join("");
+  return `<div class="err ${due?"due":""}">
+    <div style="min-width:0">
+      <div class="eyebrow">${esc(TOP[e.topico]?.nome||"Assunto")} · anotado em ${curta(e.data)}</div>
+      <div class="q">${esc(e.texto)}</div>
+      ${e.regra?`<div class="regra">${esc(e.regra)}</div>`:""}
+      <div class="revs">${revs}</div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end">
+      ${p?`<button class="btn small ${due?"primary":""}" type="button" data-rev="${e.id}">Revisei (D+${OFFS[p.idx]})</button>`:`<span class="chip green">Revisões feitas</span>`}
+      ${compacto?"":`<button class="btn ghost small" type="button" data-del-erro="${e.id}">Apagar</button>`}
+    </div></div>`;
+}
+function renderErros(){
+  const due=errosHoje();
+  const b=document.getElementById("badge-erros"); b.hidden=!due.length; b.textContent=due.length;
+  document.getElementById("hoje-erros").innerHTML = due.length ? due.map(e=>htmlErro(e,true)).join("")
+    : `<div class="empty">${S.erros.length?"Nenhuma revisão vence hoje.":"Seu caderno de erros está vazio. Nos últimos 5 minutos de cada sessão, anote cada erro na aba Caderno de erros."}</div>`;
+  let lista = S.erros.slice().sort((x,y)=>y.data.localeCompare(x.data)||(y.criado||0)-(x.criado||0));
+  if(S.fErros==="hoje") lista=due.slice().sort((x,y)=>proxRev(x).data.localeCompare(proxRev(y).data));
+  else if(S.fErros==="pend") lista=lista.filter(e=>proxRev(e));
+  document.getElementById("lista-erros").innerHTML = lista.length ? lista.map(e=>htmlErro(e,false)).join("")
+    : `<div class="empty">${S.fErros==="hoje"?"Nada para revisar hoje.":"Nenhum erro anotado ainda."}</div>`;
+}
+
+/* ---------- assuntos ---------- */
+function renderAssuntos(){
+  const box=document.getElementById("lista-assuntos");
+  if(box.contains(document.activeElement) && document.activeElement.tagName==="TEXTAREA"){ S.pendenteAssuntos=true; return; }
+  S.pendenteAssuntos=false;
+  const ps = S.prio==="todas"?["A","B","C"]:[S.prio];
+  box.innerHTML = ps.map(p=>{
+    const ts=PLANO.topicos.filter(t=>t.p===p);
+    const dom=ts.filter(t=>estadoTopico(t.id).status===3).length;
+    return `<div class="prio-head"><span class="prio-letter">${p}</span><h2>${PLANO.prioridades[p].titulo}</h2><span class="muted" style="font-size:.85rem">${PLANO.prioridades[p].quando} · ${dom} de ${ts.length} dominados</span></div>
+    <div class="topics">${ts.map(htmlTopico).join("")}</div>`;
+  }).join("");
+}
+function htmlTopico(t){
+  const e=estadoTopico(t.id), st=statsTopico(t.id), aberto=S.abertos.has(t.id);
+  const feitos=t.itens.filter((_,i)=>e.itens[i]).length, p=pct(st.a,st.q);
+  return `<div class="topic ${aberto?"open":""}" data-t="${t.id}">
+    <div class="topic-row">
+      <div style="min-width:0">
+        <button class="topic-name" type="button" data-toggle="${t.id}" aria-expanded="${aberto}"><span class="car">›</span><span>${esc(t.nome)}</span></button>
+        <div class="topic-meta">
+          <span><span class="bar"><i style="width:${Math.round(100*feitos/t.itens.length)}%"></i></span> <span class="num">${feitos}/${t.itens.length}</span> itens</span>
+          <span class="num">${st.q} questões</span>
+          ${p!=null?`<span class="num ${accCls(p)}">${p}% acerto</span>`:""}
+          ${st.ult?`<span>último estudo ${curta(st.ult)}</span>`:""}
+        </div>
+      </div>
+      <div class="bubbles" role="group" aria-label="Status de ${esc(t.nome)}">${STATUS.map((s,i)=>`<button type="button" class="bub s${i}" data-st="${t.id}:${i}" aria-pressed="${e.status===i}" title="${s.n}">${s.k}</button>`).join("")}</div>
+    </div>
+    ${aberto?`<div class="topic-body">
+      <ul class="checks">${t.itens.map((it,i)=>`<li><label><input type="checkbox" id="ck-${t.id}-${i}" data-ck="${t.id}:${i}" ${e.itens[i]?"checked":""}><span>${esc(it)}</span></label></li>`).join("")}</ul>
+      <div>
+        <div class="minis">
+          <div class="mini"><div class="v">${st.n}</div><div class="l">sessões</div></div>
+          <div class="mini"><div class="v">${(st.m/60).toFixed(1).replace(".",",")} h</div><div class="l">estudadas</div></div>
+          <div class="mini"><div class="v ${accCls(p)}">${p!=null?p+"%":"—"}</div><div class="l">acerto</div></div>
+        </div>
+        <label class="f">Anotações<textarea id="nota-${t.id}" data-nota="${t.id}" placeholder="Pegadinhas, links de aula, o que falta revisar">${esc(e.nota)}</textarea></label>
+      </div>
+    </div>`:""}
+  </div>`;
+}
+function salvarTopico(id, patch){
+  const atual=estadoTopico(id);
+  const novo={status:atual.status, itens:{...atual.itens}, nota:atual.nota, ...patch};
+  S.topicos[id]=novo; gravar("topicos/"+id, novo);
+}
+
+/* ---------- histórico ---------- */
+function renderHistorico(){
+  const ss=S.sessoes.slice().sort((x,y)=>y.data.localeCompare(x.data)||(y.criado||0)-(x.criado||0));
+  const ts=document.getElementById("t-sessoes");
+  ts.innerHTML = ss.length ? ss.map(s=>{const p=pct(s.acertos,s.questoes);const L=letraSemana(s.semana);
+    return `<tr><td class="mono">${curta(s.data)}</td><td>${s.slot?`${L}${s.slot}`:"avulsa"}</td><td>${esc(TOP[s.topico]?.nome||s.topico)}</td><td class="num">${s.minutos||0}</td><td class="num">${s.questoes||0}</td><td class="num ${accCls(p)}">${p!=null?p+"%":"—"}</td><td><button class="btn ghost small" type="button" data-del-sessao="${s.id}">Apagar</button></td></tr>`}).join("")
+    : `<tr><td colspan="7" class="muted">Nenhuma sessão registrada. Use o formulário da aba Hoje no fim de cada sessão.</td></tr>`;
+  const sem={};
+  for(const s of S.sessoes){const k=s.semana;(sem[k]||(sem[k]={n:0,m:0,q:0,a:0}));sem[k].n++;sem[k].m+=s.minutos||0;sem[k].q+=s.questoes||0;sem[k].a+=s.acertos||0;}
+  const ks=Object.keys(sem).sort().reverse();
+  document.getElementById("t-semanas").innerHTML = ks.length ? ks.map(k=>{const w=sem[k],p=pct(w.a,w.q);
+    return `<tr><td>Semana ${letraSemana(k)} · ${curta(k)}</td><td class="num">${w.n}</td><td class="num">${(w.m/60).toFixed(1).replace(".",",")}</td><td class="num">${w.q}</td><td class="num ${accCls(p)}">${p!=null?p+"%":"—"}</td></tr>`}).join("")
+    : `<tr><td colspan="5" class="muted">As semanas aparecem aqui depois da primeira sessão.</td></tr>`;
+}
+
+/* ---------- concursos ---------- */
+function renderConcursos(){
+  document.getElementById("conc").innerHTML = PLANO.concursos.map(c=>`<div class="c">
+    <div class="h"><h3>${esc(c.n)}</h3><span class="chip ${c.agora?"green":""}">${c.agora?"Pode prestar":"Após diploma"}</span></div>
+    <dl><dt>Banca</dt><dd>${esc(c.banca)}</dd><dt>Exige</dt><dd>${esc(c.exige)}</dd><dt>Situação</dt><dd>${esc(c.sit)}</dd><dt>Prova</dt><dd>${esc(c.prova)}</dd></dl></div>`).join("");
+  const box=document.getElementById("sims");
+  if(box.contains(document.activeElement)&&document.activeElement.type==="text") return;
+  box.innerHTML = PLANO.simulados.map(s=>{const d=S.simulados[s.id]||{};
+    return `<label class="sim"><input type="checkbox" id="sim-${s.id}" data-sim="${s.id}" ${d.feito?"checked":""}><span>${esc(s.n)}</span><input type="text" id="simr-${s.id}" data-simr="${s.id}" value="${esc(d.resultado||"")}" placeholder="Acertos, ex. 52/70" maxlength="40"></label>`}).join("");
+}
+
+function renderAll(){ renderHeader(); renderTiles(); renderFormSessao(); renderCiclo(); renderErros(); renderAssuntos(); renderHistorico(); renderConcursos(); }
+
+/* ---------- abas ---------- */
+const ABAS=["hoje","assuntos","erros","historico","concursos"];
+function mostrarAba(){
+  const a = ABAS.includes(location.hash.slice(1)) ? location.hash.slice(1) : "hoje";
+  for(const x of ABAS) document.getElementById("tab-"+x).hidden = x!==a;
+  document.querySelectorAll("nav.tabs a").forEach(l=>{ if(l.dataset.tab===a) l.setAttribute("aria-current","page"); else l.removeAttribute("aria-current"); });
+}
+addEventListener("hashchange", mostrarAba);
+
+/* ---------- eventos ---------- */
+function toast(id,msg){ const el=document.getElementById(id); el.textContent=msg; clearTimeout(el._t); el._t=setTimeout(()=>el.textContent="",3000); }
+
+document.getElementById("s-slot").addEventListener("change",e=>{e.target.dataset.touched="1"; syncTopicoDoSlot();});
+document.getElementById("s-data").addEventListener("change",()=>{renderFormSessao(); syncTopicoDoSlot();});
+document.getElementById("f-sessao").addEventListener("submit",e=>{
+  e.preventDefault();
+  const data=document.getElementById("s-data").value||hoje();
+  const q=Math.max(0,parseInt(document.getElementById("s-q").value)||0);
+  const a=Math.min(q,Math.max(0,parseInt(document.getElementById("s-a").value)||0));
+  const s={id:novoId(), data, semana:segunda(data), slot:Number(document.getElementById("s-slot").value)||0, topico:document.getElementById("s-topico").value, minutos:Math.max(0,parseInt(document.getElementById("s-min").value)||0), questoes:q, acertos:a, criado:Date.now()};
+  S.sessoes.push(s); const {id,...body}=s; gravar("sessoes/"+id, body);
+  if(estadoTopico(s.topico).status===0) salvarTopico(s.topico,{status:1});
+  document.getElementById("s-q").value=""; document.getElementById("s-a").value="";
+  delete document.getElementById("s-slot").dataset.touched;
+  pararTimer(); T.rest=50*60;
+  renderAll(); toast("s-toast","Sessão registrada");
+});
+document.getElementById("f-erro").addEventListener("submit",e=>{
+  e.preventDefault();
+  const texto=document.getElementById("e-q").value.trim(); if(!texto) return;
+  const er={id:novoId(), data:document.getElementById("e-data").value||hoje(), topico:document.getElementById("e-topico").value, texto, regra:document.getElementById("e-r").value.trim(), revisoes:[false,false,false], criado:Date.now()};
+  S.erros.push(er); const {id,...body}=er; gravar("erros/"+id, body);
+  document.getElementById("e-q").value=""; document.getElementById("e-r").value="";
+  renderErros(); renderTiles(); toast("e-toast",`Erro anotado. Primeira revisão em ${curta(addDias(er.data,1))}.`);
+});
+document.addEventListener("click",e=>{
+  const t=e.target.closest("[data-toggle],[data-st],[data-rev],[data-del-erro],[data-del-sessao],#f-prio button,#f-erros button");
+  if(!t) return;
+  if(t.dataset.toggle){ const id=t.dataset.toggle; S.abertos.has(id)?S.abertos.delete(id):S.abertos.add(id); renderAssuntos(); return; }
+  if(t.dataset.st){ const [id,v]=t.dataset.st.split(":"); salvarTopico(id,{status:Number(v)}); renderAssuntos(); return; }
+  if(t.dataset.rev){ const er=S.erros.find(x=>x.id===t.dataset.rev); const p=er&&proxRev(er); if(!p) return; const r=[...(er.revisoes||[false,false,false])]; r[p.idx]=true; er.revisoes=r; const {id,...body}=er; gravar("erros/"+id, body); renderErros(); renderTiles(); return; }
+  if(t.dataset.delErro){ if(t.dataset.armed!=="1"){t.dataset.armed="1";t.textContent="Confirmar";setTimeout(()=>{t.dataset.armed="";t.textContent="Apagar"},3000);return;} S.erros=S.erros.filter(x=>x.id!==t.dataset.delErro); gravar("erros/"+t.dataset.delErro,null); renderErros(); renderTiles(); return; }
+  if(t.dataset.delSessao){ if(t.dataset.armed!=="1"){t.dataset.armed="1";t.textContent="Confirmar";setTimeout(()=>{t.dataset.armed="";t.textContent="Apagar"},3000);return;} S.sessoes=S.sessoes.filter(x=>x.id!==t.dataset.delSessao); gravar("sessoes/"+t.dataset.delSessao,null); renderAll(); return; }
+  if(t.dataset.p){ S.prio=t.dataset.p; document.querySelectorAll("#f-prio button").forEach(b=>b.setAttribute("aria-pressed",b===t)); renderAssuntos(); return; }
+  if(t.dataset.e){ S.fErros=t.dataset.e; document.querySelectorAll("#f-erros button").forEach(b=>b.setAttribute("aria-pressed",b===t)); renderErros(); return; }
+});
+document.addEventListener("change",e=>{
+  const t=e.target;
+  if(t.dataset.ck){ const [id,i]=t.dataset.ck.split(":"); const it={...estadoTopico(id).itens}; if(t.checked) it[i]=true; else delete it[i]; salvarTopico(id,{itens:it}); renderAssuntos(); }
+  else if(t.dataset.sim){ const d={...(S.simulados[t.dataset.sim]||{}), feito:t.checked}; S.simulados[t.dataset.sim]=d; gravar("simulados/"+t.dataset.sim,d); }
+  else if(t.dataset.simr){ const d={...(S.simulados[t.dataset.simr]||{}), resultado:t.value.trim()}; S.simulados[t.dataset.simr]=d; gravar("simulados/"+t.dataset.simr,d); }
+});
+document.addEventListener("focusout",e=>{
+  const t=e.target;
+  if(t.dataset && t.dataset.nota!==undefined){ const id=t.dataset.nota; if(t.value!==estadoTopico(id).nota) salvarTopico(id,{nota:t.value}); setTimeout(()=>{ if(S.pendenteAssuntos) renderAssuntos(); },0); }
+});
+
+/* ---------- boot ---------- */
+document.getElementById("s-data").value=hoje();
+document.getElementById("e-data").value=hoje();
+mostrarAba();
+renderAll();
+setInterval(()=>{ if(document.getElementById("s-data").dataset.dia!==hoje()){ document.getElementById("s-data").dataset.dia=hoje(); renderHeader(); renderCiclo(); renderErros(); renderTiles(); } }, 60000);
+document.getElementById("s-data").dataset.dia=hoje();
+
+try{ const raw=ls.get(CHAVE); if(raw) aplicarDados(JSON.parse(raw)); }catch(_){}
+renderAll();
+
+function entrou(sess){
+  const novo = sess?.user || null;
+  if(novo && usuario && novo.id===usuario.id) return;
+  usuario = novo;
+  document.getElementById("app").hidden = !usuario;
+  document.getElementById("tela-login").hidden = !!usuario;
+  if(usuario) baixar();
+}
+sb.auth.getSession().then(({data})=>entrou(data.session));
+sb.auth.onAuthStateChange((_ev,sess)=>entrou(sess));
+
+const lmsg = t=>document.getElementById("l-msg").textContent=t;
+document.getElementById("f-login").addEventListener("submit",async e=>{
+  e.preventDefault(); lmsg("Entrando…");
+  const {error}=await sb.auth.signInWithPassword({email:document.getElementById("l-email").value.trim(), password:document.getElementById("l-senha").value});
+  lmsg(error ? (error.message.includes("Invalid")?"Email ou senha incorretos.":error.message.includes("confirm")?"Confirme o email pelo link que o Supabase enviou e tente de novo.":"Não consegui entrar: "+error.message) : "");
+});
+document.getElementById("l-criar").addEventListener("click",async()=>{
+  const email=document.getElementById("l-email").value.trim(), password=document.getElementById("l-senha").value;
+  if(!email||password.length<6){ lmsg("Preencha o email e uma senha com pelo menos 6 caracteres."); return; }
+  lmsg("Criando conta…");
+  const {data,error}=await sb.auth.signUp({email,password,options:{emailRedirectTo:location.origin+location.pathname}});
+  if(error) lmsg("Não consegui criar a conta: "+error.message);
+  else if(!data.session) lmsg("Conta criada. Abra o link que chegou no seu email e depois clique em Entrar.");
+});
+document.getElementById("b-sair").addEventListener("click",async()=>{
+  if(pendente()) await enviar();
+  await sb.auth.signOut(); usuario=null;
+  document.getElementById("app").hidden=true; document.getElementById("tela-login").hidden=false;
+});
+addEventListener("online",()=>{ if(pendente()) enviar(); });
+document.addEventListener("visibilitychange",()=>{ if(document.visibilityState==="visible") baixar(); });
+addEventListener("pagehide",()=>{ if(pendente()) enviar(); });
+
+document.getElementById("b-exportar").addEventListener("click",()=>{
+  const blob=new Blob([JSON.stringify(dadosAtuais(),null,2)],{type:"application/json"});
+  const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=`estudos-backup-${hoje()}.json`;
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+  toast("b-toast","Backup exportado");
+});
+document.getElementById("b-importar").addEventListener("change",async e=>{
+  const f=e.target.files[0]; if(!f) return;
+  try{
+    const d=JSON.parse(await f.text());
+    if(!d || !Array.isArray(d.sessoes)) throw new Error();
+    aplicarDados(d); gravar(); renderAll(); toast("b-toast","Backup importado");
+  }catch(_){ toast("b-toast","Esse arquivo não é um backup do painel"); }
+  e.target.value="";
+});
+</script>
+</body>
+</html>
