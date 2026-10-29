@@ -15,14 +15,17 @@
   --f-display:"Bricolage Grotesque",ui-sans-serif,system-ui,sans-serif;
   --f-body:"Atkinson Hyperlegible",ui-sans-serif,system-ui,sans-serif;
   --f-mono:"JetBrains Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
-  --r:10px;
+  --r:14px;
+  --hero:#13234A; --hero-ink:#F3F6FC; --hero-muted:#A8B5D1; --hero-line:#2A3D6B; --hero-fill:#8FB0FF;
+  --shadow:0 1px 2px rgba(19,35,74,.06),0 4px 14px rgba(19,35,74,.05);
+  --nav-h:64px;
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
   --bg:#0E131A; --surface:#161D27; --sunk:#1D2532; --ink:#E5EAF2; --muted:#97A3B5; --line:#2A3443;
-  --pen:#86A6FF; --pen-soft:#22305A; --red:#FF8073; --red-soft:#47221F; --green:#55C487; --green-soft:#183A28; --amber:#E7B556; --amber-soft:#3D3019; color-scheme:dark}}
+  --pen:#86A6FF; --pen-soft:#22305A; --red:#FF8073; --red-soft:#47221F; --green:#55C487; --green-soft:#183A28; --amber:#E7B556; --amber-soft:#3D3019; --hero:#1A2747; --hero-line:#2E406C; --shadow:0 1px 2px rgba(0,0,0,.3); color-scheme:dark}}
 :root[data-theme="dark"]{
   --bg:#0E131A; --surface:#161D27; --sunk:#1D2532; --ink:#E5EAF2; --muted:#97A3B5; --line:#2A3443;
-  --pen:#86A6FF; --pen-soft:#22305A; --red:#FF8073; --red-soft:#47221F; --green:#55C487; --green-soft:#183A28; --amber:#E7B556; --amber-soft:#3D3019; color-scheme:dark}
+  --pen:#86A6FF; --pen-soft:#22305A; --red:#FF8073; --red-soft:#47221F; --green:#55C487; --green-soft:#183A28; --amber:#E7B556; --amber-soft:#3D3019; --hero:#1A2747; --hero-line:#2E406C; --shadow:0 1px 2px rgba(0,0,0,.3); color-scheme:dark}
 
 *{box-sizing:border-box}
 body{margin:0}
@@ -169,18 +172,130 @@ td.num,th.num{text-align:right;font-family:var(--f-mono);font-variant-numeric:ta
 .sim input[type=checkbox]{accent-color:var(--green);width:18px;height:18px}
 @media (max-width:480px){.sim{grid-template-columns:auto minmax(0,1fr)}.sim input[type=text]{grid-column:2}}
 section[hidden]{display:none}
+
+/* ---------- refinamento visual e mobile ---------- */
+.panel{box-shadow:var(--shadow)}
+.tile,.topics,.err,.conc .c,.tablewrap,.hist{box-shadow:var(--shadow)}
+.hero{background:var(--hero);color:var(--hero-ink);border-radius:20px;padding:20px 22px;margin-bottom:14px;display:flex;flex-direction:column;gap:6px}
+.hero .eyebrow{color:var(--hero-muted)}
+.hero h1{color:var(--hero-ink)}
+.hero .sub{color:var(--hero-muted)}
+.hero-top{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.hero-acts{display:flex;align-items:center;gap:8px}
+.hero-acts .toast{color:var(--hero-fill)}
+.hero-prog{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 22px;margin-top:10px;max-width:640px}
+.hp-l{display:flex;justify-content:space-between;gap:8px;font-size:.8rem;color:var(--hero-muted);margin-bottom:5px}
+.hp-l .num{color:var(--hero-ink)}
+.hp-bar{height:6px;border-radius:3px;background:var(--hero-line);overflow:hidden}
+.hp-bar i{display:block;height:100%;background:var(--hero-fill);border-radius:3px}
+.hero-chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.hero .chip:not(.green):not(.amber):not(.red){background:var(--hero-line);color:var(--hero-ink)}
+.menu{position:relative}
+.menu summary{list-style:none;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;cursor:pointer;color:var(--hero-ink);background:var(--hero-line)}
+.menu summary::-webkit-details-marker{display:none}
+.menu svg,.tabs svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.menu svg .fill,.tabs svg .fill{fill:currentColor;stroke:none}
+.menu-pop{position:absolute;right:0;top:42px;z-index:30;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.18);padding:6px;min-width:190px;display:flex;flex-direction:column}
+.menu-pop button,.menu-pop label{all:unset;padding:10px 12px;border-radius:8px;cursor:pointer;font-weight:700;font-size:.9rem}
+.menu-pop button:hover,.menu-pop label:hover,.menu-pop button:focus-visible{background:var(--sunk)}
+#b-sair{color:var(--red)}
+
+nav.tabs a{display:inline-flex;align-items:center;gap:7px}
+nav.tabs a svg{width:18px;height:18px}
+
+.tile .v small{font-size:.75em;color:var(--muted);font-weight:500}
+.tile .v.acc-g small,.tile .v.acc-a small,.tile .v.acc-r small{color:inherit}
+
+/* ciclo */
+.slot{display:grid;grid-template-columns:auto 1fr auto;grid-template-areas:"sn sd st" "t t t";align-items:center;gap:6px 8px;min-height:84px;align-content:start}
+.slot .sn{grid-area:sn;width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font-family:var(--f-mono);font-size:.75rem;font-weight:700;background:var(--sunk);color:var(--muted)}
+.slot .sd{grid-area:sd;font-family:var(--f-mono);font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.slot .st{grid-area:st;font-family:var(--f-mono);font-size:.7rem;color:var(--muted)}
+.slot .t{grid-area:t;font-size:.85rem;line-height:1.3}
+.slot.done .sn{background:var(--green);color:var(--surface)}
+.slot.done .st{color:var(--green)}
+.slot.next .sn{background:var(--pen);color:var(--surface)}
+.slot.next .st{color:var(--pen);font-weight:700}
+
+.steps li{grid-template-columns:72px 1fr}
+.steps li .mono{white-space:nowrap;font-size:.8rem;padding-top:1px}
+
+form .row.tres{grid-template-columns:repeat(3,minmax(0,1fr))}
+input[type=password]{width:100%;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px;color:var(--ink);font-size:.95rem}
+input,select{min-height:42px}
+
+.err-acts{display:flex;flex-direction:column;gap:6px;align-items:flex-end}
+.filters{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
+.filters button{white-space:nowrap;flex:none}
+
+.hist{background:var(--surface);border:1px solid var(--line);border-radius:var(--r)}
+.h-row{display:grid;grid-template-columns:48px minmax(0,1fr) auto;gap:12px;align-items:center;padding:10px 12px}
+.h-row + .h-row{border-top:1px solid var(--line)}
+.h-date{display:flex;flex-direction:column;align-items:center;line-height:1.05;background:var(--sunk);border-radius:10px;padding:6px 0}
+.h-date b{font-family:var(--f-mono);font-size:1.05rem}
+.h-date span{font-size:.7rem;color:var(--muted);text-transform:uppercase}
+.h-t{font-weight:700}
+.h-m{display:flex;gap:4px 10px;flex-wrap:wrap;align-items:center;font-size:.8rem;color:var(--muted);margin-top:2px}
+.h-m .chip{padding:1px 8px;font-size:.72rem}
+
+.login{max-width:400px;margin:8vh auto 0;background:var(--surface);border:1px solid var(--line);border-radius:20px;overflow:hidden;box-shadow:var(--shadow)}
+.login-head{background:var(--hero);color:var(--hero-ink);padding:22px}
+.login-head .eyebrow{color:var(--hero-muted)}
+.login-head p{color:var(--hero-muted);margin:6px 0 0}
+.login-body{padding:20px 22px 22px}
+
+@media (max-width:720px){
+  .wrap{padding-block:12px calc(var(--nav-h) + 28px + env(safe-area-inset-bottom,0px))}
+  #tela-login.wrap{padding-bottom:24px}
+  .hero{border-radius:18px;padding:16px}
+  .hero h1{font-size:1.55rem}
+  nav.tabs{position:fixed;top:auto;bottom:0;left:0;right:0;z-index:20;margin:0;border-bottom:0;border-top:1px solid var(--line);background:var(--surface);display:grid;grid-template-columns:repeat(5,1fr);gap:0;padding:4px max(6px,env(safe-area-inset-left,0px)) calc(4px + env(safe-area-inset-bottom,0px)) max(6px,env(safe-area-inset-right,0px));box-shadow:0 -4px 16px rgba(0,0,0,.06)}
+  nav.tabs a{flex-direction:column;gap:2px;padding:7px 2px;font-size:.68rem;border-bottom:0;border-radius:10px;position:relative;justify-content:center}
+  nav.tabs a svg{width:22px;height:22px}
+  nav.tabs a[aria-current="page"]{color:var(--pen);background:var(--pen-soft)}
+  nav.tabs .badge{position:absolute;top:2px;left:calc(50% + 6px);margin:0;font-size:.62rem}
+  .panel{padding:14px}
+  .stack{gap:12px}
+  .tiles{gap:8px}
+  .tile{padding:10px 12px}
+  .tile .v{font-size:1.3rem}
+  .next-card .titulo{font-size:1.25rem}
+}
+@media (max-width:560px){
+  .hero-prog{grid-template-columns:minmax(0,1fr);gap:8px}
+  .cycle{grid-template-columns:minmax(0,1fr);gap:0;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+  .slot{border:0;border-radius:0;min-height:0;padding:10px 12px;grid-template-columns:26px minmax(0,1fr) auto;grid-template-areas:"sn t st" "sn sd st";gap:0 10px}
+  .slot + .slot{border-top:1px solid var(--line)}
+  .slot.next{border:0;box-shadow:inset 3px 0 0 var(--pen);background:var(--pen-soft)}
+  .slot .t{font-size:.92rem;font-weight:700}
+  .steps li{grid-template-columns:62px 1fr;font-size:.86rem;padding:7px 9px}
+  form .row.duas{grid-template-columns:minmax(0,1fr)}
+  .err{grid-template-columns:minmax(0,1fr)}
+  .err-acts{flex-direction:row-reverse;justify-content:space-between;align-items:center}
+  .topic-row{grid-template-columns:minmax(0,1fr);padding:12px}
+  .bubbles{gap:6px}
+  .bub{width:40px;height:32px;border-radius:999px}
+  .topic-body{padding:0 12px 14px}
+  .minis{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .conc{grid-template-columns:minmax(0,1fr)}
+  .login{margin-top:4vh}
+  th,td{padding:8px 7px}
+  th{font-size:.62rem;letter-spacing:.03em}
+}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 </head>
 <body>
 <div class="wrap" id="tela-login" hidden>
-  <div style="max-width:380px;margin:8vh auto 0" class="panel">
-    <div class="eyebrow">Concursos de TI</div>
-    <h1 style="margin-bottom:6px">Painel de Estudos TI</h1>
-    <p class="muted" style="margin:0 0 16px">Entre para carregar seu progresso salvo na nuvem.</p>
-    <form id="f-login" class="stack" style="gap:10px">
+  <div class="login">
+    <div class="login-head">
+      <div class="eyebrow">Concursos de TI · treino Cesgranrio</div>
+      <h1>Painel de Estudos TI</h1>
+      <p>Entre para carregar seu progresso salvo na nuvem.</p>
+    </div>
+    <form id="f-login" class="stack login-body" style="gap:12px">
       <label class="f">Email<input type="text" id="l-email" autocomplete="username" inputmode="email" required></label>
-      <label class="f">Senha<input type="password" id="l-senha" autocomplete="current-password" minlength="6" required style="width:100%;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px;color:var(--ink)"></label>
+      <label class="f">Senha<input type="password" id="l-senha" autocomplete="current-password" minlength="6" required></label>
       <div class="formfoot" style="margin-top:4px">
         <button class="btn primary" type="submit">Entrar</button>
         <button class="btn" type="button" id="l-criar">Criar conta</button>
@@ -190,31 +305,37 @@ section[hidden]{display:none}
   </div>
 </div>
 <div class="wrap" id="app" hidden>
-  <header class="top">
-    <div>
-      <div class="eyebrow">Concursos de TI · banca de treino Cesgranrio</div>
-      <h1>Painel de Estudos TI</h1>
-      <div class="sub" id="sub-hoje"></div>
+  <header class="hero">
+    <div class="hero-top">
+      <div class="eyebrow">Concursos de TI · treino Cesgranrio</div>
+      <div class="hero-acts">
+        <span class="toast" id="b-toast" aria-live="polite"></span>
+        <span class="chip" id="sync">Conectando…</span>
+        <details class="menu" id="menu">
+          <summary aria-label="Opções da conta"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5.5" cy="12" r="1.7" class="fill"/><circle cx="12" cy="12" r="1.7" class="fill"/><circle cx="18.5" cy="12" r="1.7" class="fill"/></svg></summary>
+          <div class="menu-pop">
+            <button type="button" id="b-exportar">Exportar backup</button>
+            <label for="b-importar">Importar backup</label>
+            <button type="button" id="b-sair">Sair da conta</button>
+          </div>
+        </details>
+        <input type="file" id="b-importar" accept="application/json,.json" hidden>
+      </div>
     </div>
-    <div style="display:flex;gap:6px;flex-wrap:wrap" id="head-chips"></div>
+    <h1>Painel de Estudos TI</h1>
+    <div class="sub" id="sub-hoje"></div>
+    <div class="hero-prog" id="hero-prog"></div>
+    <div class="hero-chips" id="head-chips"></div>
   </header>
 
   <div class="banner" id="offline" hidden></div>
-  <div class="backup" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:16px">
-    <span class="chip" id="sync">Conectando…</span>
-    <button class="btn small" type="button" id="b-exportar">Exportar backup</button>
-    <label class="btn small" for="b-importar" style="cursor:pointer">Importar backup</label>
-    <input type="file" id="b-importar" accept="application/json,.json" hidden>
-    <span class="toast" id="b-toast" aria-live="polite"></span>
-    <button class="btn ghost small" type="button" id="b-sair" style="margin-left:auto">Sair</button>
-  </div>
 
   <nav class="tabs" aria-label="Seções">
-    <a href="#hoje" data-tab="hoje">Hoje</a>
-    <a href="#assuntos" data-tab="assuntos">Assuntos</a>
-    <a href="#erros" data-tab="erros">Caderno de erros<span class="badge" id="badge-erros" hidden></span></a>
-    <a href="#historico" data-tab="historico">Histórico</a>
-    <a href="#concursos" data-tab="concursos">Concursos</a>
+    <a href="#hoje" data-tab="hoje"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/><circle cx="12" cy="15" r="1.6" class="fill"/></svg><span class="lbl">Hoje</span></a>
+    <a href="#assuntos" data-tab="assuntos"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6.5l1.6 1.6L8.5 5M4 12.5l1.6 1.6 2.9-3.1M4 18.5l1.6 1.6 2.9-3.1M11.5 7h8.5M11.5 13h8.5M11.5 19h8.5"/></svg><span class="lbl">Assuntos</span></a>
+    <a href="#erros" data-tab="erros"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3.5h10.5a2 2 0 0 1 2 2v15l-3.2-2-3.3 2-3.3-2-3.2 2V5.5A2 2 0 0 1 6 3.5z"/><path d="M9.5 8.5l5 5M14.5 8.5l-5 5"/></svg><span class="lbl">Erros</span><span class="badge" id="badge-erros" hidden></span></a>
+    <a href="#historico" data-tab="historico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a8 8 0 1 0 2.4-5.7L4 8.5"/><path d="M4 4v4.5h4.5M12 8v4.5l3 2"/></svg><span class="lbl">Histórico</span></a>
+    <a href="#concursos" data-tab="concursos"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7.5 4h9v5a4.5 4.5 0 0 1-9 0V4zM7.5 6H4.5v1.5A3 3 0 0 0 7.8 10.5M16.5 6h3v1.5a3 3 0 0 1-3.3 3M12 13.5V17M8.5 20.5h7M9.5 17h5v3.5h-5z"/></svg><span class="lbl">Concursos</span></a>
   </nav>
 
   <!-- HOJE -->
@@ -235,14 +356,14 @@ section[hidden]{display:none}
       <div class="panel">
         <h2>Registrar sessão</h2>
         <form id="f-sessao" style="margin-top:12px">
-          <div class="row">
+          <div class="row duas">
             <label class="f">Data<input type="date" id="s-data" required></label>
             <label class="f">Sessão do ciclo<select id="s-slot"></select></label>
           </div>
           <div class="row" style="margin-top:10px">
             <label class="f" style="grid-column:1/-1">Assunto<select id="s-topico"></select></label>
           </div>
-          <div class="row" style="margin-top:10px">
+          <div class="row tres" style="margin-top:10px">
             <label class="f">Minutos<input type="number" id="s-min" min="1" max="600" value="50" inputmode="numeric"></label>
             <label class="f">Questões<input type="number" id="s-q" min="0" max="500" value="" placeholder="12" inputmode="numeric"></label>
             <label class="f">Acertos<input type="number" id="s-a" min="0" max="500" value="" placeholder="9" inputmode="numeric"></label>
@@ -319,10 +440,7 @@ section[hidden]{display:none}
     </div>
     <div>
       <h2 style="margin-bottom:10px">Sessões registradas</h2>
-      <div class="tablewrap"><table>
-        <thead><tr><th>Data</th><th>Sessão</th><th>Assunto</th><th class="num">Min</th><th class="num">Questões</th><th class="num">Acerto</th><th></th></tr></thead>
-        <tbody id="t-sessoes"></tbody>
-      </table></div>
+      <div class="hist" id="t-sessoes"></div>
     </div>
   </section>
 
@@ -481,7 +599,13 @@ function errosHoje(){ const h=hoje(); return S.erros.filter(e=>{const p=proxRev(
 /* ---------- render: cabeçalho e Hoje ---------- */
 function renderHeader(){
   const h=hoje(), d=parse(h), seg=segunda(h), L=letraSemana(seg);
-  document.getElementById("sub-hoje").textContent = `${DIASEM[d.getDay()]}, ${curta(h)} de ${d.getFullYear()} · Semana ${L} · 50 min por dia, 6 dias por semana`;
+  document.getElementById("sub-hoje").textContent = `${DIASEM[d.getDay()][0].toUpperCase()+DIASEM[d.getDay()].slice(1)}, ${curta(h)} de ${d.getFullYear()} · Semana ${L} · 50 min por dia`;
+  const As=PLANO.topicos.filter(t=>t.p==="A"); let tot=0,fe=0; for(const t of As){tot+=t.itens.length; const it=estadoTopico(t.id).itens; fe+=t.itens.filter((_,i)=>it[i]).length;}
+  let min=0; for(const s of S.sessoes) min+=s.minutos||0; const hrs=min/60;
+  document.getElementById("hero-prog").innerHTML = [
+    {l:"Prioridade A", v:`${fe} de ${tot} itens`, p:tot?fe/tot:0},
+    {l:"Meta de horas", v:`${hrs.toFixed(1).replace(".",",")} de 400 h`, p:Math.min(1,hrs/400)},
+  ].map(x=>`<div class="hp"><div class="hp-l"><span>${x.l}</span><span class="num">${x.v}</span></div><div class="hp-bar"><i style="width:${Math.max(x.p>0?2:0,Math.round(x.p*100))}%"></i></div></div>`).join("");
   const fase = h < "2026-11-01" ? "Começo: Fase 1 em nov/2026" : h < "2027-03-01" ? "Fase 1 · só Prioridade A" : "Prioridade B liberada";
   document.getElementById("head-chips").innerHTML = `<span class="chip pen">${fase}</span><span class="chip">Alvo: BB e Caixa</span>`;
 }
@@ -493,10 +617,10 @@ function renderTiles(){
   const p=pct(a,q);
   const pend=errosHoje().length;
   document.getElementById("tiles").innerHTML = [
-    {v:`${slotsFeitos}/6`, l:"sessões do ciclo nesta semana"},
-    {v:`${(m/60).toFixed(1).replace(".",",")} h`, l:"estudadas no total · meta de 400 a 800 h para nível médio"},
-    {v:q?`${p}%`:"—", l:q?`de acerto em ${q} questões`:"de acerto · registre questões para ver", c:accCls(p)},
-    {v:String(pend), l:pend===1?"erro para revisar hoje":"erros para revisar hoje", c:pend?"acc-r":""},
+    {v:`${slotsFeitos}<small>/6</small>`, l:"sessões na semana"},
+    {v:`${(m/60).toFixed(1).replace(".",",")}<small> h</small>`, l:"estudadas no total"},
+    {v:q?`${p}<small>%</small>`:"—", l:q?`acerto em ${q} questões`:"acerto nas questões", c:accCls(p)},
+    {v:String(pend), l:pend===1?"revisão de erro hoje":"revisões de erro hoje", c:pend?"acc-r":""},
   ].map(t=>`<div class="tile"><div class="v ${t.c||""}">${t.v}</div><div class="l">${t.l}</div></div>`).join("");
 }
 function slotsSemana(seg){
@@ -510,7 +634,7 @@ function renderCiclo(){
   document.getElementById("cycle-title").textContent = `Semana ${L} · ${curta(seg)} a ${curta(addDias(seg,6))}`;
   document.getElementById("cycle").innerHTML = itens.map((it,i)=>{
     const n=i+1, f=feitos[n];
-    return `<div class="slot ${f?"done":""} ${n===prox?"next":""}"><div class="n"><span>${n} · ${PLANO.dias[i]}</span><span>${f?"feita":n===prox?"próxima":""}</span></div><div class="t">${esc(it.n)}</div></div>`;
+    return `<div class="slot ${f?"done":""} ${n===prox?"next":""}"><span class="sn">${f?"✓":n}</span><span class="sd">${PLANO.dias[i]}</span><span class="st">${f?"feita":n===prox?"próxima":""}</span><span class="t">${esc(it.n)}</span></div>`;
   }).join("");
   const nc=document.getElementById("next-card");
   if(!prox){
@@ -576,7 +700,7 @@ function htmlErro(e, compacto){
       ${e.regra?`<div class="regra">${esc(e.regra)}</div>`:""}
       <div class="revs">${revs}</div>
     </div>
-    <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end">
+    <div class="err-acts">
       ${p?`<button class="btn small ${due?"primary":""}" type="button" data-rev="${e.id}">Revisei (D+${OFFS[p.idx]})</button>`:`<span class="chip green">Revisões feitas</span>`}
       ${compacto?"":`<button class="btn ghost small" type="button" data-del-erro="${e.id}">Apagar</button>`}
     </div></div>`;
@@ -646,13 +770,15 @@ function renderHistorico(){
   const ss=S.sessoes.slice().sort((x,y)=>y.data.localeCompare(x.data)||(y.criado||0)-(x.criado||0));
   const ts=document.getElementById("t-sessoes");
   ts.innerHTML = ss.length ? ss.map(s=>{const p=pct(s.acertos,s.questoes);const L=letraSemana(s.semana);
-    return `<tr><td class="mono">${curta(s.data)}</td><td>${s.slot?`${L}${s.slot}`:"avulsa"}</td><td>${esc(TOP[s.topico]?.nome||s.topico)}</td><td class="num">${s.minutos||0}</td><td class="num">${s.questoes||0}</td><td class="num ${accCls(p)}">${p!=null?p+"%":"—"}</td><td><button class="btn ghost small" type="button" data-del-sessao="${s.id}">Apagar</button></td></tr>`}).join("")
-    : `<tr><td colspan="7" class="muted">Nenhuma sessão registrada. Use o formulário da aba Hoje no fim de cada sessão.</td></tr>`;
+    return `<div class="h-row"><div class="h-date"><b>${parse(s.data).getDate()}</b><span>${MESES[parse(s.data).getMonth()]}</span></div>
+      <div class="h-main"><div class="h-t">${esc(TOP[s.topico]?.nome||s.topico)}</div><div class="h-m"><span class="chip">${s.slot?`${L}${s.slot}`:"avulsa"}</span><span class="num">${s.minutos||0} min</span><span class="num">${s.questoes||0} questões</span>${p!=null?`<span class="num ${accCls(p)}">${p}%</span>`:""}</div></div>
+      <button class="btn ghost small" type="button" data-del-sessao="${s.id}">Apagar</button></div>`}).join("")
+    : `<div class="empty">Nenhuma sessão registrada. Use o formulário da aba Hoje no fim de cada sessão.</div>`;
   const sem={};
   for(const s of S.sessoes){const k=s.semana;(sem[k]||(sem[k]={n:0,m:0,q:0,a:0}));sem[k].n++;sem[k].m+=s.minutos||0;sem[k].q+=s.questoes||0;sem[k].a+=s.acertos||0;}
   const ks=Object.keys(sem).sort().reverse();
   document.getElementById("t-semanas").innerHTML = ks.length ? ks.map(k=>{const w=sem[k],p=pct(w.a,w.q);
-    return `<tr><td>Semana ${letraSemana(k)} · ${curta(k)}</td><td class="num">${w.n}</td><td class="num">${(w.m/60).toFixed(1).replace(".",",")}</td><td class="num">${w.q}</td><td class="num ${accCls(p)}">${p!=null?p+"%":"—"}</td></tr>`}).join("")
+    return `<tr><td style="white-space:nowrap">${letraSemana(k)} · ${curta(k)}</td><td class="num">${w.n}</td><td class="num">${(w.m/60).toFixed(1).replace(".",",")}</td><td class="num">${w.q}</td><td class="num ${accCls(p)}">${p!=null?p+"%":"—"}</td></tr>`}).join("")
     : `<tr><td colspan="5" class="muted">As semanas aparecem aqui depois da primeira sessão.</td></tr>`;
 }
 
@@ -771,6 +897,8 @@ addEventListener("online",()=>{ if(pendente()) enviar(); });
 document.addEventListener("visibilitychange",()=>{ if(document.visibilityState==="visible") baixar(); });
 addEventListener("pagehide",()=>{ if(pendente()) enviar(); });
 
+const menu=document.getElementById("menu");
+document.addEventListener("click",e=>{ if(menu.open && (!menu.contains(e.target) || e.target.closest(".menu-pop button,.menu-pop label"))) menu.open=false; });
 document.getElementById("b-exportar").addEventListener("click",()=>{
   const blob=new Blob([JSON.stringify(dadosAtuais(),null,2)],{type:"application/json"});
   const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=`estudos-backup-${hoje()}.json`;
