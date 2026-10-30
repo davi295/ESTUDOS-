@@ -129,6 +129,7 @@ textarea{resize:vertical;min-height:64px}
 .legend b{font-family:var(--f-mono)}
 .topic-body{padding:0 14px 16px 34px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px}
 @media (max-width:700px){.topic-body{grid-template-columns:minmax(0,1fr);padding-left:14px}}
+.onde{grid-column:1/-1;margin:0;font-size:.85rem;color:var(--muted)}
 .checks{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:2px}
 .checks label{display:flex;gap:8px;align-items:flex-start;padding:4px 6px;border-radius:6px;cursor:pointer}
 .checks label:hover{background:var(--sunk)}
@@ -392,6 +393,8 @@ input,select{min-height:42px}
       <button type="button" data-p="A" aria-pressed="false">Prioridade A</button>
       <button type="button" data-p="B" aria-pressed="false">Prioridade B</button>
       <button type="button" data-p="C" aria-pressed="false">Prioridade C</button>
+      <button type="button" data-p="D" aria-pressed="false">Prioridade D</button>
+      <button type="button" data-p="E" aria-pressed="false">Prioridade E</button>
     </div>
     <div class="legend"><span><b>–</b> não iniciado</span><span><b>E</b> estudando</span><span><b>R</b> revisando</span><span><b>D</b> dominado</span></div>
     <div id="lista-assuntos"></div>
@@ -465,36 +468,48 @@ input,select{min-height:42px}
 const {SUPABASE_URL, SUPABASE_ANON_KEY} = window.CONFIG;
 const PLANO = {
   topicos: [
-    {id:"bd", p:"A", nome:"Banco de dados e SQL", itens:["Modelo E-R","Mapeamento E-R para relacional","Normalização 1FN a 3FN","DDL","DML","JOINs","GROUP BY e HAVING","Subconsultas"]},
-    {id:"java", p:"A", nome:"Java e POO", itens:["Classes e objetos","Herança","Polimorfismo","Interfaces","Exceções","Coleções"]},
-    {id:"python", p:"A", nome:"Python para dados", itens:["Listas","Dicionários","Slicing","Pandas","NumPy","scikit-learn: fit e predict"]},
-    {id:"ed", p:"A", nome:"Estruturas de dados", itens:["Busca sequencial","Busca binária","Bolha","Seleção","Inserção","Pilha","Fila","Lista encadeada","Percursos de árvore binária","Tabela hash (leitura rápida)"]},
-    {id:"es", p:"A", nome:"Engenharia de software e ágil", itens:["Scrum","Kanban","Requisitos","UML","Padrões GoF","Testes","Git","CI/CD e DevOps"]},
-    {id:"port", p:"A", nome:"Português Cesgranrio", itens:["Interpretação de textos","Crase","Pontuação","Concordância","Regência","Colocação pronominal"]},
-    {id:"est", p:"A", nome:"Estatística", itens:["Média, mediana e moda","Variância e desvio padrão","Probabilidade condicional","Teorema de Bayes","Distribuição binomial","Distribuição normal"]},
-    {id:"dw", p:"B", nome:"Data Warehouse, Big Data e NoSQL", itens:["Esquema estrela","Floco de neve","Big Data","NoSQL"]},
-    {id:"arq", p:"B", nome:"Arquitetura: MVC, microsserviços, REST, nuvem", itens:["MVC","Microsserviços","REST","Códigos HTTP","Nuvem"]},
-    {id:"ml", p:"B", nome:"Machine learning", itens:["Supervisionado vs. não supervisionado","PCA","Noções de PLN"]},
-    {id:"seg", p:"B", nome:"Segurança da informação e LGPD", itens:["Segurança da informação","LGPD"]},
-    {id:"mat", p:"B", nome:"Matemática do BB", itens:["Lógica proposicional","Porcentagem","PA e PG","Matrizes"]},
-    {id:"red", p:"B", nome:"Redação", itens:["Treinar 1 redação a cada 2 semanas","Conferir nota mínima e linhas no edital"]},
-    {id:"ing", p:"C", nome:"Inglês", itens:["Fazer 2 ou 3 provas antigas"]},
-    {id:"matfin", p:"C", nome:"Matemática Financeira", itens:["SAC","PRICE"]},
-    {id:"banc", p:"C", nome:"Conhecimentos Bancários e Atualidades do Mercado Financeiro", itens:["Conhecimentos Bancários","Atualidades do Mercado Financeiro"]},
-    {id:"etica", p:"C", nome:"Ética, Compliance e Comportamentos Digitais (Caixa)", itens:["PLD","LGPD","LC 105","Res. CMN 4.893","Comportamentos Digitais"]},
-    {id:"gov", p:"C", nome:"Governança: ITIL 4, COBIT, CMMI", itens:["ITIL 4","COBIT","CMMI"]},
-    {id:"so", p:"C", nome:"SO e arquitetura de computadores", itens:["Sistemas operacionais","Arquitetura de computadores"]},
-    {id:"redes", p:"C", nome:"Redes de computadores", itens:["Redes de computadores"]},
-    {id:"mobile", p:"C", nome:"Mobile: Android, Kotlin, React Native", itens:["Android","Kotlin","React Native"]},
+    {id:"bd", p:"A", nome:"Banco de dados e SQL", onde:"Cai nos dois. BB 2023: 8 de 35 questões de TI. Caixa 2024: 3 de 30. É o assunto de maior peso.", itens:["Modelo E-R: entidades (inclusive fracas), atributos e cardinalidades","Mapeamento E-R para tabelas e chaves estrangeiras","Normalização: 1FN, 2FN e 3FN (dependências parciais e transitivas)","DDL: CREATE, ALTER, DROP, PRIMARY KEY e FOREIGN KEY","DML: SELECT, INSERT, UPDATE, DELETE, operadores lógicos e WHERE","JOINs: INNER, LEFT, RIGHT e produto cartesiano","COUNT, SUM, AVG, GROUP BY e HAVING","Subconsultas: IN, NOT IN e EXISTS","Conceitos de SGBD, instâncias, controle de acesso e concorrência","Índices, views e triggers"]},
+    {id:"java", p:"A", nome:"Java e POO", onde:"Cai nos dois. BB 2023: 4 de 35, com rastreio de código. Caixa 2024: 3 de 30.", itens:["Classes, objetos, atributos, métodos e this","Herança: extends, construtores e super()","Polimorfismo: sobrecarga, sobrescrita (@Override), métodos estáticos e de instância","Interfaces e classes abstratas","Exceções: try, catch, finally, throw e throws","Coleções: ArrayList, HashSet e HashMap","Sintaxe: tipagem estática, operadores, if/else, while e for","Encapsulamento: public, private, protected e pacote","String e Character: charAt, length e concat"]},
+    {id:"python", p:"A", nome:"Python para dados", onde:"Cai nos dois. BB 2023: 4 de 35. Caixa 2024: 3 de 30. np.dot caiu nas duas provas.", itens:["Listas e tuplas","Dicionários","Slicing","Pandas: Series, DataFrames, df[['x','y']] e filtros booleanos","NumPy: vetores, matrizes, np.dot e np.where","scikit-learn: fit, predict e coeficientes lineares"]},
+    {id:"ed", p:"A", nome:"Estruturas de dados", onde:"Cai nos dois. BB 2023: 3 de 35. Caixa 2024: 3 de 30. Treine rastreando passo a passo.", itens:["Busca sequencial","Busca binária sobre vetor ordenado","Bolha","Seleção","Inserção","Pilha: LIFO, push/pop e rastreio passo a passo","Fila: FIFO, enfileirar e desenfileirar","Lista encadeada: nós, ponteiros e inserção","Árvore binária: raiz, folhas, altura e percursos pré, in e pós-ordem","Tabela hash (leitura rápida, fora dos editais)"]},
+    {id:"es", p:"A", nome:"Engenharia de software e ágil", onde:"Cai muito só na Caixa: 6 de 30 em 2024. O BB não cobrou nenhuma em 2023 nem traz no edital.", itens:["Scrum: PO, Scrum Master, Devs, Planning, Daily, Review e Retrospectiva","Kanban: fluxo e limite de WIP (leitura rápida, não caiu em 2023 nem 2024)","Engenharia de requisitos","UML: diagrama de classes e leitura em Java","Padrões GoF: Singleton, Factory Method, Adapter, Decorator, Facade, Observer e Strategy","Testes: unidade, integração, regressão, alfa, beta, aceitação e TDD","Git: commit, branch, merge e rebase (leitura rápida, não caiu em 2023 nem 2024)","CI/CD, DevOps e DevSecOps (leitura rápida, não caiu em 2023 nem 2024)","Histórias de usuário, Story Points e Pontos de Função"]},
+    {id:"port", p:"A", nome:"Português Cesgranrio", onde:"Cai nos dois. BB: 10 questões com peso 1,5, a maior nota fora de TI. Caixa: 5 questões.", itens:["Interpretação: ideia central, inferências e sentido no contexto","Crase: regra geral, proibições e casos facultativos","Pontuação: vírgula com adjuntos deslocados e orações","Concordância verbal e nominal: sujeito composto e posposto, haver e fazer","Regência: assistir, visar, aspirar, implicar e preferir","Colocação pronominal: próclise, ênclise, mesóclise e palavras atrativas","Conectivos: concessivas, causais, condicionais e temporais"]},
+    {id:"est", p:"A", nome:"Estatística", onde:"Cai nos dois. BB 5 questões com peso 1,5. Caixa 5 questões. Bayes e normal caíram no BB 2023.", itens:["Média, mediana e moda","Variância e desvio padrão","Probabilidade condicional","Teorema de Bayes","Distribuição binomial","Distribuição normal e escore Z"]},
+    {id:"ml", p:"A", nome:"Machine learning e dados", onde:"Cai muito só no BB: 5 de 35 em 2023. Questões conceituais, com bom retorno por hora.", itens:["Supervisionado vs. não supervisionado","PCA e redução de dimensionalidade","PLN: noções e tokenização","Classificação, regressão e clusterização","Pré-processamento: valores nulos e outliers","Dado, informação e conhecimento (DIKW)"]},
+    {id:"dw", p:"B", nome:"Data Warehouse, Big Data e NoSQL", onde:"BB 2023: 3 de 35 (NoSQL 2, Big Data 1). Caixa 2024: nenhuma direta, embora o edital cite DW e Big Data.", itens:["Esquema estrela","Floco de neve","Big Data: Volume, Velocidade, Variedade, preparação e apresentação de dados","NoSQL: documentos (MongoDB), chave-valor (Redis), grafos (Neo4j), colunas e teorema CAP","Modelagem conceitual de DW e dados multidimensionais"]},
+    {id:"arq", p:"B", nome:"Arquitetura: MVC, microsserviços, REST, nuvem", onde:"Caixa 2024: 2 de 30 (código HTTP 301 e XML). BB 2023: nenhuma. Também em Dataprev, Serpro e Petrobras.", itens:["MVC","Microsserviços","REST: GET, POST, PUT e DELETE","Códigos HTTP: 2xx, 3xx, 4xx e 5xx","Nuvem: pública, privada, serverless e migração","Camadas, monolito, SOA e micro front end","Web services: SOAP, WSDL, UDDI, XML, XSLT e HTML"]},
+    {id:"seg", p:"B", nome:"Segurança da informação e LGPD", onde:"Caixa cobra dentro de Ética e Compliance, BB dentro de Bancários. Dataprev e Serpro cobram a LGPD por capítulos.", itens:["Segurança da informação: fundamentos, conceitos e mecanismos","LGPD: Lei 13.709/2018 e aplicação em bancos"]},
+    {id:"mat", p:"B", nome:"Matemática do BB", onde:"BB 5 questões (peso 1,5). A Caixa TI não cobra este bloco.", itens:["Lógica proposicional","Porcentagem","PA e PG","Matrizes","Razões, proporções e regra de três","Conjuntos e problemas de contagem","Funções polinomiais, exponenciais e logarítmicas","Determinantes e sistemas lineares","Sistema legal de medidas"]},
+    {id:"red", p:"B", nome:"Redação", onde:"Só Caixa e BB têm. Eliminatória, 100 pontos, corte em 70 (nos dois editais). Os 4 parágrafos são modelo de treino.", itens:["Treinar 1 redação a cada 2 semanas","Regras: dissertativo-argumentativo, nota mínima 70 e 25 a 30 linhas nas provas de 2023 e 2024","Introdução: tese explícita e dois argumentos norteadores","Desenvolvimento 1: tópico frasal, causa, efeito e evidência","Desenvolvimento 2: contraponto, desafios operacionais ou impactos sociais","Conclusão: síntese reflexiva, sem os cinco elementos do Enem","Tema real BB 2023: bom atendimento aos clientes nas instituições financeiras","Tema real Caixa 2024: mobilidade urbana e desigualdade social nas grandes cidades","Prática: inclusão financeira com Pix e Open Finance","Prática: segurança da informação, privacidade e ética no uso de dados","Prática: automação e inteligência artificial no setor público"]},
+    {id:"gov", p:"B", nome:"Governança: ITIL 4, COBIT, CMMI", onde:"Só Caixa: 3 de 30 em 2024. O BB não cobra. Dataprev e Serpro cobram ITIL.", itens:["ITIL 4","COBIT 2019: objetivos de governança e gestão","CMMI e MPS.BR: níveis de maturidade"]},
+    {id:"so", p:"B", nome:"SO e arquitetura de computadores", onde:"Só Caixa: 4 de 30 em 2024. O BB não cobra.", itens:["Sistemas operacionais: processos, escalonamento, memória e arquivos","Arquitetura de computadores: CPU, hierarquia de memória e modos de endereçamento","Representação de dados: binário, complemento de dois e ponto flutuante","Linux: comandos e privilégios (sudo)"]},
+    {id:"ling", p:"B", nome:"TypeScript e Ansible", onde:"BB 2023: TypeScript 2 e Ansible 1, de 35. A Caixa cita TypeScript no edital, mas não cobrou em 2024.", itens:["TypeScript: tipagem estática, inferência e checagem em compilação","Ansible: playbooks em YAML, plays, tasks e modules"]},
+    {id:"mobile", p:"B", nome:"Mobile: Android, Kotlin, React Native", onde:"Só BB: 5 de 35 em 2023. Questões curtas e de reconhecimento. A Caixa não cobrou em 2024.", itens:["Android: Activity, Fragment e TextView","Kotlin","React Native: useState","Swift e iOS"]},
+    {id:"comp_ti", p:"B", nome:"Complementos de TI", onde:"Estão nos editais, mas caíram pouco ou nada em 2023 e 2024. Entram depois do núcleo.", itens:["Modelagem física: tabelas, índices, particionamento e desempenho","PostgreSQL (BB)","Vetores e matrizes: índices e deslocamento em memória","Funções lambda em Python","Matplotlib: tipos de gráfico (caiu na Caixa 2024)","SciPy: regressão linear com stats (caiu na Caixa 2024)","Java EE: Servlets, JSP e JSF (Servlet caiu na Caixa 2024)","XP, Lean, SAFe e Nexus","Processo Unificado (UP)","Qualidade estática: revisão, inspeção e análise estática"]},
+    {id:"comp_bas", p:"B", nome:"Complementos de Português e Estatística", onde:"Depois do núcleo. Reforçam a nota, mas pesam menos que os itens da Prioridade A.", itens:["Coesão: pronomes anafóricos e catafóricos","Ortografia, acentuação e classes de palavras","Sintaxe da oração e do período","Redação oficial e Manual da Presidência (Caixa)","Tabelas e gráficos","Medidas de posição, amplitude interquartil e coeficiente de variação","Variáveis aleatórias, covariância e correlação linear","População, amostra e noções de inferência","Modelos preditivos e regressão (Caixa)"]},
+    {id:"ing", p:"C", nome:"Inglês", onde:"Caixa 5 questões, BB 5 questões. Dataprev 12 e Serpro 12 pesam mais.", itens:["Fazer 2 ou 3 provas antigas","Vocabulário e gramática para compreensão de textos"]},
+    {id:"matfin", p:"C", nome:"Matemática Financeira", onde:"Caixa 5 questões, Banestes Técnico 5 questões. O Agente de Tecnologia do BB não cobra.", itens:["SAC","PRICE","Juros simples e compostos","Fluxo de caixa e equivalência financeira","Descontos","Sequências, PA e PG","Uso da HP12C"]},
+    {id:"banc", p:"C", nome:"Conhecimentos Bancários e Atualidades do Mercado Financeiro", onde:"BB: Bancários 5 (peso 1,5) e Atualidades 5. A Caixa TI não tem este bloco.", itens:["Conhecimentos Bancários: SFN, CMN, Banco Central, CVM e operadores","Atualidades: bancos digitais, fintechs, Pix, Open Finance, shadow banking e blockchain","Moeda, Selic e política monetária","Mercados de crédito, capitais e câmbio","Produtos bancários e garantias do SFN","ASG e responsabilidade socioambiental"]},
+    {id:"etica", p:"C", nome:"Ética, Compliance e Comportamentos Digitais (Caixa)", onde:"Caixa: Ética e Compliance 5 questões, Comportamentos Digitais 5. No BB, a legislação fica em Bancários.", itens:["PLD: Lei 9.613/98, Circular 3.978 e Carta Circular 4.001","LGPD","LC 105/2001: sigilo bancário","Res. CMN 4.893: segurança cibernética","Comportamentos Digitais: Design Thinking, mindset de crescimento, OKR e ODS","Lei anticorrupção 12.846/2013","Art. 37 da Constituição, ética e assédio","Governança corporativa","Inteligência emocional e liderança"]},
+    {id:"leitura", p:"C", nome:"Leitura de sintaxe perto da prova: C#, R, COBOL, JS", onde:"Só Caixa: C#, R e COBOL, 1 questão cada em 2024. Não vale aprender a linguagem, só reconhecer a sintaxe.", itens:["C#: if, função e impressão","R: hist e comandos básicos","COBOL: divisões e declaração PIC","JavaScript e Angular: leitura básica"]},
+    {id:"bt_banc", p:"D", nome:"Bancários e Atualidades (FCC)", onde:"Banestes Técnico: Bancários 15 questões (peso 2) e Atualidades 5.", itens:["SFN, instituições financeiras e de pagamento","Produtos e serviços bancários, crédito e investimentos","Política monetária, Copom, Selic, inflação e indicadores","Open Finance, Pix e fintechs","PLD, financiamento do terrorismo e COAF","Seguros, previdência, capitalização, bancassurance e consórcio","Educação financeira, portabilidade e Res. CMN 4.966/2021"]},
+    {id:"bt_vendas", p:"D", nome:"Vendas, Negociação e Atendimento", onde:"Banestes Técnico: 10 questões (peso 2). Não aparece em nenhum outro concurso da lista.", itens:["Qualidade no atendimento, presencial e digital","Técnicas de vendas, pós-venda, prospecção e fidelização","Etapas e estratégias de negociação","CRM, marketing de relacionamento e experiência do cliente","Resolução de conflitos e tratamento de reclamações"]},
+    {id:"bt_gerais", p:"D", nome:"Demais matérias (FCC)", onde:"Banestes Técnico: Português 10, Raciocínio 10, Ética/ESG 5, Informática e Comportamentos Digitais 5. Mat. Financeira e Estatística ficam nos assuntos acima.", itens:["Português FCC: figuras de linguagem, vozes do verbo e reescrita de frases","Raciocínio lógico: sequências, contagem, regra de três e porcentagem","Ética, compliance, ESG e Guia de Conduta do Banestes","Informática: Windows, Linux básico, internet e segurança digital","Google Workspace e Gemini","IA em bancos e LGPD no setor bancário"]},
+    {id:"redes", p:"E", nome:"Redes de computadores", onde:"Fora dos editais de TI de Caixa e BB. Petrobras e Serpro cobram protocolos.", itens:["Redes de computadores: TCP/IP, HTTP, HTTPS, TLS e protocolos"]},
+    {id:"dataprev", p:"E", nome:"Dataprev – Desenvolvimento de Software (FGV)", onde:"Edital 2026, perfil 3: 40 gerais (peso 1) e 30 específicas (peso 2,5). Sem redação.", itens:["Legislação: LAI, Marco Civil, Lei 12.737 e LGPD por capítulos","Raciocínio lógico: proposições, tabelas-verdade e equivalências","Atualidades e IA: modelos generativos, ética e governança","Java EE, JPA, Spring, Hibernate, JUnit e Primefaces","SonarQube, clean code, low-code e RPA","Frontend: HTML, CSS, VueJS, Angular, React, SPA e PWA","Swagger, mensageria, arquitetura hexagonal e transações distribuídas","BI: ETL, OLAP, data mining e data lake","Segurança: ISO 27001 e 27002, OAuth2, SSO, OWASP, SAST e DAST","Gestão de projetos, BPMN e blockchain"]},
+    {id:"serpro", p:"E", nome:"Serpro – Analista de Tecnologia (Cebraspe)", onde:"Edital 2023: 120 itens Certo/Errado e prova prática de programação. Sem novo edital.", itens:["Prova prática: programar, corrigir, refatorar e testar em 2h30","Segurança: ICP-Brasil, MFA, JWT, OpenID Connect, SAML e OWASP Top 10","Backend: Spring Boot, Quarkus, Django, Flask, Node e NestJS","Frontend: Angular, React, VueJS, SPA, PWA e testes A/B","Docker, Kubernetes, OpenShift, Kafka e RabbitMQ","gRPC, WebSockets, AMQP e MQTT","SOLID, Clean Code, GRASP, DDD, SAGA e CQRS","Terraform, resiliência e observabilidade","Nuvem: 12 fatores, IaaS, PaaS e SaaS","Big Data: data lake, pipelines e MapReduce","Deep learning, visão computacional e sistemas de recomendação"]},
+    {id:"petro", p:"E", nome:"Petrobras – Analista de Sistemas (Eng. de Software)", onde:"Base: edital 2021 (Cebraspe), único com programa de TI encontrado. O próximo será Cesgranrio e pode mudar.", itens:["BDD, ciclo de vida de aplicações e BPMN","Arquitetura orientada a eventos, ESB, publish-subscribe e streaming","Threads, deadlocks, garbage collector e tipos genéricos","Árvores AVL, B e B+, heap, recursão, complexidade e caminho mínimo","ACID, transações, ETL, data lake e gestão de dados mestres","Nuvem: disponibilidade, custos, IoT e IaC","BI, OLAP, dashboards e SAFe","Processamento paralelo, HPC e virtualização","Segurança: ataques, SIEM, WAF, Mitre ATT&CK e ISO 31000","Governança: ITIL 4, ERP e DAMA-DMBoK"]},
   ],
   prioridades: {
     A:{titulo:"Começa agora", quando:"nov/2026 a jun/2027"},
     B:{titulo:"Começa em mar/2027", quando:"ganha força no 2º semestre"},
     C:{titulo:"Só quando o edital sair", quando:"pós-edital"},
+    D:{titulo:"Banestes Técnico (opcional)", quando:"FCC · inscrições até 23/11/2026, prova em 24/01/2027"},
+    E:{titulo:"Depois do diploma", quando:"Dataprev, Serpro e Petrobras · Banestes TI ainda sem conteúdo publicado"},
   },
   ciclo: {
     A:[{t:"bd",n:"Banco de dados: modelagem e normalização"},{t:"port",n:"Português: interpretação"},{t:"java",n:"Java e POO"},{t:"bd",n:"SQL na prática + questões de BD"},{t:"ed",n:"Estruturas de dados"},{t:"est",n:"Estatística"}],
-    B:[{t:"bd",n:"Banco de dados: modelagem e normalização"},{t:"port",n:"Português: gramática"},{t:"python",n:"Python para dados"},{t:"bd",n:"SQL na prática + questões de BD"},{t:"es",n:"Engenharia de software e ágil"},{t:"red",n:"Redação ou revisão geral dos erros"}],
+    B:[{t:"ml",n:"Machine learning e dados"},{t:"port",n:"Português: gramática"},{t:"python",n:"Python para dados"},{t:"bd",n:"SQL na prática + questões de BD"},{t:"es",n:"Engenharia de software e ágil"},{t:"red",n:"Redação ou revisão geral dos erros"}],
   },
   dias:["seg","ter","qua","qui","sex","sáb"],
   passos:[
@@ -660,7 +675,7 @@ function renderFormSessao(){
   const cur=sel.value;
   sel.innerHTML = PLANO.ciclo[L].map((it,i)=>`<option value="${i+1}">${i+1} · ${esc(it.n)}</option>`).join("")+`<option value="0">Sessão avulsa (fora do ciclo)</option>`;
   if(cur) sel.value=cur;
-  const opts = ["A","B","C"].map(p=>`<optgroup label="Prioridade ${p}">${PLANO.topicos.filter(t=>t.p===p).map(t=>`<option value="${t.id}">${esc(t.nome)}</option>`).join("")}</optgroup>`).join("");
+  const opts = Object.keys(PLANO.prioridades).map(p=>`<optgroup label="Prioridade ${p}">${PLANO.topicos.filter(t=>t.p===p).map(t=>`<option value="${t.id}">${esc(t.nome)}</option>`).join("")}</optgroup>`).join("");
   for(const id of ["s-topico","e-topico"]){ const s=document.getElementById(id); const v=s.value; s.innerHTML=opts; if(v) s.value=v; }
 }
 function syncTopicoDoSlot(){
@@ -722,7 +737,7 @@ function renderAssuntos(){
   const box=document.getElementById("lista-assuntos");
   if(box.contains(document.activeElement) && document.activeElement.tagName==="TEXTAREA"){ S.pendenteAssuntos=true; return; }
   S.pendenteAssuntos=false;
-  const ps = S.prio==="todas"?["A","B","C"]:[S.prio];
+  const ps = S.prio==="todas"?Object.keys(PLANO.prioridades):[S.prio];
   box.innerHTML = ps.map(p=>{
     const ts=PLANO.topicos.filter(t=>t.p===p);
     const dom=ts.filter(t=>estadoTopico(t.id).status===3).length;
@@ -747,6 +762,7 @@ function htmlTopico(t){
       <div class="bubbles" role="group" aria-label="Status de ${esc(t.nome)}">${STATUS.map((s,i)=>`<button type="button" class="bub s${i}" data-st="${t.id}:${i}" aria-pressed="${e.status===i}" title="${s.n}">${s.k}</button>`).join("")}</div>
     </div>
     ${aberto?`<div class="topic-body">
+      <p class="onde">${esc(t.onde)}</p>
       <ul class="checks">${t.itens.map((it,i)=>`<li><label><input type="checkbox" id="ck-${t.id}-${i}" data-ck="${t.id}:${i}" ${e.itens[i]?"checked":""}><span>${esc(it)}</span></label></li>`).join("")}</ul>
       <div>
         <div class="minis">
