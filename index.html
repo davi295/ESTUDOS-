@@ -283,6 +283,54 @@ input,select{min-height:42px}
   th,td{padding:8px 7px}
   th{font-size:.62rem;letter-spacing:.03em}
 }
+/* ---------- Banestes ---------- */
+.seg{display:flex;gap:4px;background:var(--sunk);border-radius:12px;padding:4px;margin-bottom:12px;overflow-x:auto;scrollbar-width:none}
+.seg button{flex:1 0 auto;border:0;background:transparent;border-radius:9px;padding:8px 12px;font-weight:700;font-size:.88rem;color:var(--muted);cursor:pointer;white-space:nowrap}
+.seg button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:var(--shadow)}
+.lembrete{border-left:4px solid var(--pen);background:var(--pen-soft);border-radius:8px;padding:10px 14px;font-size:.9rem}
+.lembrete b{color:var(--pen)}
+.aviso{background:var(--sunk);border-radius:8px;padding:10px 14px;font-size:.85rem;color:var(--muted);margin-bottom:12px}
+.est{display:inline-flex;align-items:center;padding:1px 8px;border-radius:999px;background:var(--amber-soft);color:var(--amber);font-weight:700}
+.est.ed{background:var(--green-soft);color:var(--green)}
+.herd{font-family:var(--f-mono);font-size:.7rem;color:var(--pen);margin-left:6px;white-space:nowrap}
+.nota-antiga{font-size:.82rem;color:var(--muted);background:var(--sunk);border-radius:8px;padding:8px 10px;margin-top:8px;white-space:pre-wrap}
+.cycle.dupla{grid-template-rows:repeat(2,auto);grid-auto-flow:column}
+.cycle-note{margin-top:10px;font-size:.85rem}
+.slot.folga{background:transparent;border-style:dashed;color:var(--muted)}
+.slot.folga .t{color:var(--muted)}
+.slot.leve:not(.done){background:var(--amber-soft);border-color:transparent}
+.foco{display:flex;flex-direction:column;gap:16px}
+.foco-top{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px 20px;align-items:center}
+.foco-top h2{font-size:1.4rem}
+.count{text-align:right}
+.count b{display:block;font-family:var(--f-mono);font-size:2.4rem;line-height:1;color:var(--pen);font-variant-numeric:tabular-nums}
+.count span{font-size:.8rem;color:var(--muted)}
+.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+@media (max-width:900px){.grid3{grid-template-columns:minmax(0,1fr)}}
+.box{background:var(--sunk);border-radius:10px;padding:12px 14px;font-size:.88rem}
+.box h3{margin-bottom:6px}
+.box ul,.box ol{margin:0;padding-left:18px}
+.box li + li{margin-top:3px}
+.datas{list-style:none;padding:0!important;margin:0;display:flex;flex-direction:column;gap:2px}
+.datas li{display:grid;grid-template-columns:88px minmax(0,1fr);gap:8px;padding:3px 0}
+.datas li .mono{font-size:.8rem;color:var(--muted)}
+.datas li.passou{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--line)}
+.datas li.prox{font-weight:700}
+.datas li.prox .mono{color:var(--pen)}
+.pesos{display:flex;flex-direction:column;gap:6px;margin-top:4px}
+.peso{display:grid;grid-template-columns:minmax(0,1fr) 46px;gap:2px 8px;font-size:.84rem}
+.peso .bar{grid-column:1/-1;width:100%}
+.fases{display:flex;flex-direction:column;gap:8px}
+.fase{border:1px solid var(--line);border-radius:10px;padding:10px 14px;background:var(--surface)}
+.fase.agora{border:2px solid var(--pen)}
+.fase .fh{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:baseline}
+.fase p{margin:4px 0 0;font-size:.88rem}
+@media (max-width:560px){
+  .foco-top{grid-template-columns:minmax(0,1fr)}
+  .count{text-align:left}
+  .cycle.dupla{grid-auto-flow:row}
+  .datas li{grid-template-columns:78px minmax(0,1fr)}
+}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 </head>
@@ -290,7 +338,7 @@ input,select{min-height:42px}
 <div class="wrap" id="tela-login" hidden>
   <div class="login">
     <div class="login-head">
-      <div class="eyebrow">Concursos de TI · treino Cesgranrio</div>
+      <div class="eyebrow">Foco: Banestes 2027 · treino FCC</div>
       <h1>Painel de Estudos TI</h1>
       <p>Entre para carregar seu progresso salvo na nuvem.</p>
     </div>
@@ -308,7 +356,7 @@ input,select{min-height:42px}
 <div class="wrap" id="app" hidden>
   <header class="hero">
     <div class="hero-top">
-      <div class="eyebrow">Concursos de TI · treino Cesgranrio</div>
+      <div class="eyebrow">Foco: Banestes 2027 · treino FCC</div>
       <div class="hero-acts">
         <span class="toast" id="b-toast" aria-live="polite"></span>
         <span class="chip" id="sync">Conectando…</span>
@@ -365,7 +413,7 @@ input,select{min-height:42px}
             <label class="f" style="grid-column:1/-1">Assunto<select id="s-topico"></select></label>
           </div>
           <div class="row tres" style="margin-top:10px">
-            <label class="f">Minutos<input type="number" id="s-min" min="1" max="600" value="50" inputmode="numeric"></label>
+            <label class="f">Minutos<input type="number" id="s-min" min="1" max="600" value="60" inputmode="numeric"></label>
             <label class="f">Questões<input type="number" id="s-q" min="0" max="500" value="" placeholder="12" inputmode="numeric"></label>
             <label class="f">Acertos<input type="number" id="s-a" min="0" max="500" value="" placeholder="9" inputmode="numeric"></label>
           </div>
@@ -388,14 +436,9 @@ input,select{min-height:42px}
 
   <!-- ASSUNTOS -->
   <section id="tab-assuntos" hidden>
-    <div class="filters" id="f-prio" role="group" aria-label="Filtrar por prioridade">
-      <button type="button" data-p="todas" aria-pressed="true">Todas</button>
-      <button type="button" data-p="A" aria-pressed="false">Prioridade A</button>
-      <button type="button" data-p="B" aria-pressed="false">Prioridade B</button>
-      <button type="button" data-p="C" aria-pressed="false">Prioridade C</button>
-      <button type="button" data-p="D" aria-pressed="false">Prioridade D</button>
-      <button type="button" data-p="E" aria-pressed="false">Prioridade E</button>
-    </div>
+    <div class="seg" id="f-trilha" role="group" aria-label="Escolher trilha"></div>
+    <div id="trilha-info"></div>
+    <div class="filters" id="f-prio" role="group" aria-label="Filtrar por prioridade"></div>
     <div class="legend"><span><b>–</b> não iniciado</span><span><b>E</b> estudando</span><span><b>R</b> revisando</span><span><b>D</b> dominado</span></div>
     <div id="lista-assuntos"></div>
   </section>
@@ -449,14 +492,15 @@ input,select{min-height:42px}
 
   <!-- CONCURSOS -->
   <section id="tab-concursos" class="stack" hidden>
+    <div id="banestes"></div>
     <div>
-      <h2>Raio-X dos concursos</h2>
+      <h2>Depois do Banestes</h2>
       <p class="muted" style="margin:4px 0 12px;font-size:.9rem">Situação em out/2026. BB e Caixa são os únicos de TI que aceitam nível médio; o resto entra no radar perto da formatura (fim de 2028).</p>
       <div class="conc" id="conc"></div>
     </div>
     <div>
-      <h2>Provas antigas para simulado</h2>
-      <p class="muted" style="margin:4px 0 12px;font-size:.9rem">Guarde para a Fase 3. Marque quando fizer e anote o resultado.</p>
+      <h2>Outras provas antigas para simulado</h2>
+      <p class="muted" style="margin:4px 0 12px;font-size:.9rem">Provas da Cesgranrio e da Petrobras, para depois do Banestes. Marque quando fizer e anote o resultado.</p>
       <div class="sims" id="sims"></div>
     </div>
   </section>
@@ -466,8 +510,187 @@ input,select{min-height:42px}
 <script src="config.js"></script>
 <script>
 const {SUPABASE_URL, SUPABASE_ANON_KEY} = window.CONFIG;
+/* Trilha Banestes: itens copiados do Anexo IV do Edital 01/2027 (cargo 04 e Conhecimentos Gerais).
+   "est" = estimativa de questões (não está no edital). "herda" = item da trilha antiga que já cobre o item novo:
+   "bd:2" usa o item 2 de "bd"; "a+b" exige os dois; "a|b" aceita qualquer um. */
+const BANESTES = [
+  // ---- Prioridade A ----
+  {id:"bn_prog", tr:"bn", p:"A", est:"~6–8", nome:"Programação", onde:"Anexo IV, cargo 04: Programação. Junto com Redes, foi o assunto que mais caiu nas provas recentes de Analista de TI da FCC.",
+   itens:["Conhecimento das linguagens PHP, Python, C, Java e C#","Arcabouço de desenvolvimento .NET","Fundamentos de programação: sintaxe, estrutura de programas, compilação e execução","Tipos primitivos de dados","Variáveis, literais e strings","Operadores e precedência","Estruturas de controle e repetição","Definição de classes, interfaces, métodos e atributos","Encapsulamento, herança e polimorfismo","Packages","Sobrecarga e sobrescrita de métodos","Tratamento de exceções","Acesso a banco de dados","Princípios de orientação a objetos e princípios SOLID","Testes automatizados unitários e de integração","TDD e BDD","Uso de sistemas de controle de versão (Git)","Fluxos de trabalho colaborativos (GitFlow, pull requests e code review)","Uso responsável de assistentes de código baseados em inteligência artificial"],
+   herda:{4:"java:6+java:8",5:"java:6",6:"java:6",7:"java:0+java:3",8:"java:1+java:2+java:7",10:"java:2",11:"java:4",16:"es:6"}},
+  {id:"bn_bd", tr:"bn", p:"A", est:"~5–7", nome:"Banco de dados", onde:"Anexo IV, cargo 04: Banco de Dados.",
+   itens:["Modelo entidade-relacionamento","Normalização","Comandos SQL: DML, DDL e DCL","Controle de transações","SQL, PL/SQL e PL/pgSQL","PostgreSQL versões 14 e 15","Oracle 19c","H2 Database","Uso de subconsultas, Common Table Expressions (CTEs) e funções analíticas (window functions)","Conceitos de modelagem dimensional (fatos, dimensões, métricas, esquemas estrela e floco de neve)","Conceitos de data warehouse, data mart, OLAP e data lake em nível conceitual","Bancos de dados NoSQL (documentos, chave-valor, colunas largas e grafos) em nível conceitual","Fundamentos de governança e qualidade de dados (integridade, consistência e rastreabilidade)"],
+   herda:{0:"bd:0",1:"bd:2",2:"bd:3+bd:4",5:"comp_ti:1",9:"dw:0+dw:1",11:"dw:3"}},
+  {id:"bn_es", tr:"bn", p:"A", est:"~5–7", nome:"Processo de desenvolvimento e engenharia de software", onde:"Anexo IV, cargo 04: Processo de desenvolvimento de software.",
+   itens:["CMMI-DEV v2.0","ABNT NBR ISO/IEC/IEEE 12207:2021","MR-MPS-SW versão 2023","UML 2.5","BPMN","Métodos ágeis (Scrum, Kanban, XP e similares)","Engenharia de requisitos","Engenharia de software","Modelagem e especificação de processos e sistemas","Desenvolvimento low-code e no-code","Modelagem de dados estruturados, semiestruturados (XML, JSON) e não estruturados","Boas práticas de documentação técnica, dicionário de dados e rastreabilidade de requisitos","Qualidade de software segundo o modelo ISO/IEC 25010:2024","Tipos de testes de software (funcionais, não funcionais, unitários, de integração, de sistema, de aceitação, de desempenho, de carga, de estresse, de segurança e de usabilidade)","Gestão da configuração de software","Versionamento semântico","Revisão de código (code review)"],
+   herda:{5:"es:0+es:1",6:"es:2",16:"comp_ti:9"}},
+  {id:"bn_redes", tr:"bn", p:"A", est:"~4–6", nome:"Redes de computadores", onde:"Anexo IV, cargo 04: Redes de computadores e Serviços e gerenciamento de redes.",
+   itens:["Tipos e meios de transmissão","Comutação de circuitos, pacotes e células","PAN, LAN, MAN, WAN, WPAN, WLAN, WMAN e WWAN","Elementos de interconexão","Arquitetura TCP/IP","IPv4 e IPv6","Protocolos TCP, UDP, IPSec, ARP, SSH, SMTP, HTTP, FTP, LDAP, DNS, DHCP, POP e IMAP","Conceitos de MPLS","Protocolos de roteamento OSPF e BGP","Cabeamento estruturado categorias 5e, 6, 6a e 7 conforme ABNT NBR 14565:2019","Fibras ópticas monomodo e multimodo","Padrões IEEE 802.1D, 802.1Q/p, 802.1D-2004, 802.1Q-2005, 802.1X, 802.3, 802.3u, 802.3z, 802.3ae e 802.3af","Redes sem fio IEEE 802.11n/ac/ax","Conceitos de SDN, NFV, VLAN, VXLAN e redes modernas de data center","Serviços e gerenciamento de redes: serviços de e-mail, DHCP e Web Proxy","Servidores de aplicação (WildFly, JBoss EAP, Apache HTTP Server, IIS): administração e configuração","Análise de desempenho de redes","Gerenciamento de usuários","Configuração, administração e logs de serviços","VPNs corporativas","Acesso remoto seguro","QoS para voz, vídeo e dados","SNMP, agentes, gerentes e MIBs","Níveis de serviço e métricas de desempenho","Métodos de avaliação de desempenho: RFC 2889 e RFC 2544","VoIP, ToIP e videoconferência: SIP, H.323, Multicast e IGMP","Ferramentas de monitoramento e logs: Zabbix, Elasticsearch, Logstash, Kibana, Grafana, Prometheus e Fluentd"],
+   herda:{4:"redes:0"}},
+  {id:"bn_seg", tr:"bn", p:"A", est:"~4–6", nome:"Segurança da informação", onde:"Anexo IV, cargo 04: Segurança da Informação. Atenção: o cargo 04 cobra OWASP Top 10:2021 (o de 2025 é do cargo 06).",
+   itens:["ABNT NBR ISO/IEC 27001:2024 e ABNT NBR ISO/IEC 27002:2022","Sistemas de proteção: firewall, WAF, UTM, DMZ, proxy, NAC, antivírus e antispam","IDS e IPS","Monitoramento de tráfego","Segurança em redes sem fio (EAP, WPA, WPA2 e WPA3)","VPN, VPN-SSL e ZTNA","Ataques e ameaças: malware, DoS e DDoS","Criptografia simétrica e assimétrica","Certificados e assinaturas digitais","Hashes criptográficos","Controle de acesso: autenticação, autorização e auditoria","RBAC e MFA","SSL/TLS","LGPD (Lei nº 13.709/2018): fundamentos, princípios, bases legais, tratamento pelo Poder Público, direitos dos titulares, agentes de tratamento e papel da ANPD","Anonimização e pseudonimização","Gestão de riscos de segurança segundo ABNT NBR ISO/IEC 27005:2023","Gestão de incidentes conforme ABNT NBR ISO/IEC 27035-1:2023 e NIST SP 800-61 Rev. 3","Segurança em nuvem conforme ABNT NBR ISO/IEC 27017:2016","Defesa em profundidade","Zero Trust","SOC, SIEM, EDR e segurança de endpoints","Gestão e correlação de logs","Segurança de APIs e aplicações web conforme OWASP Top 10:2021","IAM, SSO, OAuth 2.0 e OpenID Connect (OIDC)"],
+   herda:{13:"seg:1"}},
+  {id:"bn_port", tr:"bn", p:"A", qtd:"10 questões (edital)", nome:"Língua Portuguesa (FCC)", onde:"Conhecimentos Gerais: 10 questões. Também é o 2º critério de desempate, depois de Específicos.",
+   itens:["Ortografia e acentuação","Emprego do sinal indicativo de crase","Compreensão e interpretação de textos de gêneros variados","Relação do texto com seu contexto histórico","Denotação e conotação","Discurso direto, discurso indireto e discurso indireto livre","Intertextualidade","Figuras de linguagem","Morfossintaxe","Elementos estruturais e processos de formação de palavras","Sinonímia e antonímia","Pontuação","Pronomes","Concordância nominal e concordância verbal","Flexão nominal e flexão verbal","Vozes do verbo","Correlação de tempos e modos verbais","Regência nominal e regência verbal","Coordenação e subordinação","Conectivos","Redação (confronto e reconhecimento de frases corretas e incorretas; organização e reorganização de orações e períodos; equivalência e transformação de estruturas)"],
+   herda:{0:"comp_bas:1",1:"port:1",2:"port:0",11:"port:2",13:"port:3",17:"port:4",18:"comp_bas:2",19:"port:6"}},
+  {id:"bn_rle", tr:"bn", p:"A", qtd:"10 questões com Mat. Financeira (edital)", nome:"Raciocínio Lógico e Estatística", onde:"Conhecimentos Gerais: 10 questões no total, contando a Matemática Financeira (que está separada abaixo, na Prioridade B).",
+   itens:["Estrutura lógica de relações arbitrárias entre pessoas, lugares, objetos ou eventos fictícios; deduzir novas informações das relações fornecidas e avaliar as condições usadas para estabelecer a estrutura daquelas relações","Compreensão e elaboração da lógica das situações por meio de: raciocínio verbal, raciocínio matemático, raciocínio sequencial, orientação espacial e temporal, formação de conceitos, discriminação de elementos","Compreensão do processo lógico que, a partir de um conjunto de hipóteses, conduz, de forma válida, a conclusões determinadas","Números inteiros e racionais: operações (adição, subtração, multiplicação, divisão, potenciação); expressões numéricas; múltiplos e divisores de números naturais; problemas","Frações e operações com frações","Números e grandezas proporcionais: razões e proporções; divisão em partes proporcionais; regra de três; porcentagem e problemas envolvendo regra de três simples, cálculos de porcentagem, acréscimos e descontos","Noções de Estatística: medidas de tendência central (moda, mediana, média aritmética simples e ponderada)","Medidas de dispersão (desvio médio, amplitude, variância, desvio padrão)","Leitura e interpretação de gráficos (histogramas, setores, infográficos) e tabelas","Contagem: princípio multiplicativo e aditivo, permutações e combinações simples"],
+   herda:{5:"mat:1+mat:4",6:"est:0",7:"est:1",8:"comp_bas:4",9:"mat:5"}},
+  // ---- Prioridade B ----
+  {id:"bn_web", tr:"bn", p:"B", est:"~3–5", nome:"Desenvolvimento web e mobile, APIs", onde:"Anexo IV, cargo 04: Desenvolvimento de aplicações web e mobile.",
+   itens:["HTML5, CSS3, Bootstrap 5, JavaScript, TypeScript, Python e .NET","Frameworks JavaScript (React, React Native, Angular, Vue.js ou equivalentes) e ambiente de execução Node.js","Web Services REST","XML: criação, declaração, definição de elementos e atributos, e XML Schema","Servidores de aplicação e servidores web","Ambientes internet, extranet, intranet e portais","Desenvolvimento de APIs RESTful","Versionamento de APIs","Contratos de API (OpenAPI/Swagger)","Princípios de design de APIs (idempotência, paginação, autenticação e autorização)","Desenvolvimento responsivo (mobile-first)","Usabilidade, experiência do usuário (UX) e acessibilidade digital conforme WCAG versões 2.1/2.2 e ABNT NBR 17225:2025","Integração com serviços externos","Uso de JSON em integrações e APIs públicas","Governança de APIs"],
+   herda:{2:"arq:2"}},
+  {id:"bn_devops", tr:"bn", p:"B", est:"~3–5 com Nuvem", nome:"DevOps e DevSecOps", onde:"Anexo IV, cargo 04: DevOps e DevSecOps. Os 4 últimos itens (Git, Rancher, deploy e CI/CD) estão no trecho de Computação em nuvem do edital.",
+   itens:["Integração contínua (CI) e entrega contínua (CD)","Pipelines de build, teste e deploy","Infraestrutura como código","Automação de testes de regressão","Segurança em pipelines (DevSecOps)","Observabilidade (logs, métricas e traces)","Monitoramento contínuo de aplicações","Containers e imagens","Docker","Ambientes em cluster","Kubernetes","Ferramentas de orquestração de containers","Estratégias de blue/green deployment e canary releases","Versionamento de código com Git","Ambientes em cluster com Kubernetes; orquestração de containers com Rancher e gerenciamento de clusters Kubernetes com Rancher","Deploy de aplicações","Integração contínua e entrega contínua (CI/CD)"],
+   herda:{13:"es:6"}},
+  {id:"bn_nuvem", tr:"bn", p:"B", est:"~3–5 com DevOps", nome:"Computação em nuvem", onde:"Anexo IV, cargo 04: Computação em nuvem. A estimativa de questões é a mesma de DevOps, somadas.",
+   itens:["Conceitos de nuvem pública, privada, híbrida e multicloud","Modelos de serviço IaaS, PaaS e SaaS","Estratégias de migração de aplicações","Governança de nuvem","Controle de custos","Escalabilidade","Alta disponibilidade e resiliência","Uso de serviços gerenciados de banco de dados, mensageria, armazenamento e integração","Levantamento de requisitos, testes, integração e documentação técnica","Governança de dados, autenticação e controle de acesso"]},
+  {id:"bn_gov", tr:"bn", p:"B", est:"~3–5", nome:"Gestão e governança de TI", onde:"Anexo IV, cargo 04: Gestão e Governança de Tecnologia da Informação. Atenção às versões: PMBOK 8ª edição e ITIL Version 5.",
+   itens:["PMBOK – 8ª edição","ITIL (Version 5)","COBIT 2019","Planejamento estratégico de TIC (PETIC, PDTIC)","Gestão de portfólio de projetos e produtos digitais","Gestão de níveis de serviço (SLAs e OLAs)","Melhoria contínua","Gestão financeira de TI (TCO, ROI, CAPEX, OPEX e FinOps)","Gestão de riscos de TI baseada na ABNT NBR ISO 31000:2018","Gestão de contratos e fornecedores de TIC com foco na Lei nº 14.133/2021","Critérios de desempenho e conformidade em contratações de TIC","Gestão de stakeholders e comunicação","Redação técnica e normativa em TIC","Conceitos de arquitetura corporativa, alinhamento estratégico entre TIC e negócio","Interoperabilidade e padronização de soluções no setor público","Fundamentos conceituais de arquitetura corporativa com base no TOGAF"],
+   herda:{2:"gov:1"}},
+  {id:"bn_arq", tr:"bn", p:"B", est:"~3–4", nome:"Arquitetura de sistemas", onde:"Anexo IV, cargo 04: Arquitetura de sistemas.",
+   itens:["Arquiteturas multicamadas, cliente-servidor e objetos distribuídos","Conceitos de SOA","Arquiteturas orientadas a eventos, filas e mensageria","Padrões arquiteturais MVC, DDD (Domain-Driven Design), arquitetura hexagonal e arquiteturas cloud-native","Padrões de resiliência: API Gateway, Service Discovery, circuit breaker, retries e timeouts","Integração entre sistemas legados e modernos","Arquiteturas orientadas a serviços e a microsserviços em ambientes institucionais"],
+   herda:{1:"arq:5",6:"arq:1+arq:5"}},
+  {id:"bn_matfin", tr:"bn", p:"B", qtd:"dentro das 10 de Raciocínio", nome:"Matemática Financeira", onde:"Faz parte de Raciocínio Lógico e Estatística no edital. Separada aqui porque entra na Fase 2.",
+   itens:["Regimes de capitalização em juros simples e compostos; montante, juros e número de períodos","Taxas nominal, efetiva e real (com inflação) e conversão de taxas","Equivalência de taxas e de capitais (data focal)","Capitalização contínua","Séries de pagamentos uniformes e não uniformes","Descontos: descontos simples comercial (bancário) e racional, e descontos compostos comercial e racional","Amortizações: Sistema Price (francês), Sistema de Amortização Constante (SAC) e Sistema Misto","Fluxo de caixa, valor presente e valor futuro","Avaliação econômica de projetos: Valor Presente Líquido, Taxa Interna de Retorno"],
+   herda:{0:"matfin:2",5:"matfin:4",6:"matfin:0+matfin:1",7:"matfin:3"}},
+  // ---- Prioridade C ----
+  {id:"bn_so", tr:"bn", p:"C", est:"~2–4", nome:"Sistemas operacionais", onde:"Anexo IV, cargo 04: Sistemas Operacionais.",
+   itens:["Gerenciamento de processos e threads","Alocação de CPU","Sincronização","Deadlocks e starvation","Gerenciamento de memória: segmentação, memória virtual e paginação","Sistemas de entrada e saída","Armazenamento secundário e terciário","Linux (Red Hat e Oracle Linux): instalação, configuração, administração e comandos","Microsoft Windows (Windows 11, Windows Server 2019 e Windows Server 2022): instalação, configuração e administração","Active Directory","PowerShell","Conceitos de virtualização de servidores","Containers em sistemas operacionais","Automação de tarefas administrativas","Hardening de sistemas operacionais"],
+   herda:{0:"so:0",1:"so:0",4:"so:0"}},
+  {id:"bn_atual", tr:"bn", p:"C", qtd:"5 questões (edital)", nome:"Atualidades do Mercado Financeiro e Digital", onde:"Conhecimentos Gerais: 5 questões. Decoreba: fica para a Fase 3 e a semana final.",
+   itens:["Sistema Financeiro Nacional: estrutura, órgãos normativos, supervisores e operadores","Política monetária, Comitê de Política Monetária (Copom) do Banco Central do Brasil, taxa Selic, inflação, taxas de juros e seus impactos na economia","Mercados financeiro e de capitais: conceitos, produtos, serviços e principais indicadores","Open Finance, Pix, moedas digitais, inovação e transformação digital no sistema financeiro","Fintechs, bancos digitais, instituições de pagamento e tendências do setor bancário","Educação financeira, inclusão financeira e proteção do consumidor financeiro","Sustentabilidade, finanças sustentáveis e ESG no mercado financeiro","Cenários econômico e geopolítico nacional e internacional e seus reflexos no sistema financeiro","Atualidades e tendências do mercado financeiro brasileiro"],
+   herda:{0:"banc:0|bt_banc:0",1:"banc:2|bt_banc:2",3:"banc:1|bt_banc:3",4:"banc:1|bt_banc:3"}},
+  {id:"bn_etica", tr:"bn", p:"C", qtd:"5 questões (edital)", nome:"Ética, Compliance e ESG", onde:"Conhecimentos Gerais: 5 questões. Decoreba: fica para a Fase 3. Inclui o Guia de Conduta Ética do Banestes (último item).",
+   itens:["Ética e moral: conceitos, princípios e aplicação no ambiente organizacional","Ética no serviço público e nas instituições financeiras","Integridade, transparência, responsabilidade e conflitos de interesse","Governança corporativa: conceitos, princípios e boas práticas","Compliance: conceito, objetivos, controles internos, gestão de riscos, canais de denúncia e programas de integridade","Prevenção e combate à corrupção, fraudes e lavagem de dinheiro","Proteção de dados pessoais e privacidade","Noções da Lei Geral de Proteção de Dados Pessoais (LGPD)","ESG (Environmental, Social and Governance): conceitos, fundamentos e aplicação nas organizações","Sustentabilidade e responsabilidade socioambiental corporativa","Aspectos ambientais, sociais e de governança (ESG) aplicados ao setor financeiro","Desenvolvimento sustentável, Agenda 2030 e Objetivos de Desenvolvimento Sustentável (ODS)","Guia de Conduta Ética do Banestes (banestes.com.br/institucional/pdf/guia_de_conduta_etica.pdf)"],
+   herda:{3:"etica:7",5:"etica:0+etica:5",7:"etica:1"}},
+  {id:"bn_ing", tr:"bn", p:"C", nome:"Inglês técnico", onde:"Anexo IV, cargo 04: Inglês técnico. Só leitura: treine nos textos em inglês das próprias questões de TI.",
+   itens:["Inglês técnico"]},
+  // Ocultos: não aparecem em Assuntos, só servem para registrar a sessão.
+  {id:"bn_rev", tr:"bn", p:"X", oculto:true, nome:"Revisão do caderno de erros", onde:"", itens:[]},
+  {id:"bn_sim", tr:"bn", p:"X", oculto:true, nome:"Simulados e correção", onde:"", itens:[]},
+];
+const SESSAO_MIN = 60;
+const INICIO_BN = "2026-11-16"; // semana em que o ciclo do Banestes começa (Fase 1 começa na terça, 17/11)
+const BN = {
+  prova:"2027-02-21",
+  horasDia:2,
+  fases:[
+    {id:"F1", n:"Fase 1", de:"2026-11-17", ate:"2026-12-20", t:"Blocos A, com teoria curta e questões FCC.", d:"Programação, Banco de Dados, Eng. de Software, Redes, Segurança, Português e Raciocínio Lógico e Estatística."},
+    {id:"F2", n:"Fase 2", de:"2026-12-21", ate:"2027-01-24", t:"Blocos B e C de TI e Matemática Financeira; mantenha Português e Lógica.", d:"Web/APIs, DevOps, Nuvem, Governança, Arquitetura e Sistemas Operacionais; Inglês técnico só na leitura das questões. 25/12 e 01/01: só 1 sessão leve do caderno de erros."},
+    {id:"F3", n:"Fase 3", de:"2027-01-25", ate:"2027-02-14", t:"Só questões FCC. Atualidades e Ética/ESG entram aqui.", d:"1 simulado completo por semana, no domingo: 80 questões em 4 h (31/01, 07/02 e 14/02)."},
+    {id:"FF", n:"Semana final", de:"2027-02-15", ate:"2027-02-20", t:"Revisar o caderno de erros, ler o Guia de Conduta Ética do Banestes e as notícias recentes (Selic/Copom, Pix, Open Finance).", d:"Sábado, 20/02, é descanso."},
+  ],
+  // Anexo V do edital
+  datas:[
+    {d:"2026-11-14", t:"Fim do pedido de isenção"},
+    {d:"2026-12-11", t:"Fim das inscrições (23h59)"},
+    {d:"2026-12-14", t:"Último dia para pagar o boleto (R$ 87,00)"},
+    {d:"2027-01-15", t:"Vagas reservadas e condições especiais"},
+    {d:"2027-02-01", t:"Edital de convocação (local de prova)"},
+    {d:"2027-02-21", t:"Prova objetiva, de manhã, 4 h"},
+    {d:"2027-02-22", t:"Gabarito e questões (a partir das 17h)"},
+    {d:"2027-02-24", t:"Fim do prazo de recurso do gabarito (23 e 24/02)"},
+    {d:"2027-03-24", t:"Resultado preliminar"},
+    {d:"2027-04-06", t:"Resultado definitivo das provas"},
+    {d:"2027-05-31", t:"Resultado final (previsto)"},
+  ],
+  // item 4 do pedido: % do tempo até a prova
+  divisao:[
+    {n:"Banco de dados", p:12},{n:"Programação", p:12},{n:"Eng. de software e processos", p:10},{n:"Redes", p:7},{n:"Segurança", p:7},
+    {n:"Arquitetura + Web + DevOps + Nuvem", p:8},{n:"Governança de TI", p:4},{n:"Sistemas operacionais", p:3},
+    {n:"Português", p:12},{n:"Raciocínio Lógico e Estatística (com Mat. Financeira)", p:12},{n:"Atualidades", p:5},{n:"Ética, Compliance e ESG", p:5},{n:"Simulados (correção)", p:3},
+  ].map(x=>({...x, ids:{"Banco de dados":["bn_bd"],"Programação":["bn_prog"],"Eng. de software e processos":["bn_es"],"Redes":["bn_redes"],"Segurança":["bn_seg"],
+    "Arquitetura + Web + DevOps + Nuvem":["bn_arq","bn_web","bn_devops","bn_nuvem"],"Governança de TI":["bn_gov"],"Sistemas operacionais":["bn_so"],"Português":["bn_port"],
+    "Raciocínio Lógico e Estatística (com Mat. Financeira)":["bn_rle","bn_matfin"],"Atualidades":["bn_atual"],"Ética, Compliance e ESG":["bn_etica"],"Simulados (correção)":["bn_sim"]}[x.n]})),
+  pesos:[{n:"Conhecimentos Específicos (50 × peso 2)", p:66.7},{n:"Português (10)", p:11.1},{n:"Raciocínio Lógico e Estatística (10)", p:11.1},{n:"Atualidades (5)", p:5.6},{n:"Ética, Compliance e ESG (5)", p:5.6}],
+  simulados:[
+    {id:"bn_sim1", n:"FCC TRT-1 2025 – Analista de TI", dia:"2027-01-31"},
+    {id:"bn_sim2", n:"FCC TRT-6 2025 – Analista de TI", dia:"2027-02-07"},
+    {id:"bn_sim3", n:"FCC TRT-15 2025 – Analista de TI", dia:"2027-02-14"},
+  ],
+  lembrete:"Banco de questões: filtro FCC, 2018+, Analista de TI (TRTs, TRFs, TJs, SEFAZ). Para Atualidades e Ética, use também questões bancárias da Cesgranrio.",
+  // Feriados que viram 1 sessão leve do caderno de erros (a 2ª sessão do dia fica de folga)
+  leves:{"2026-12-25":"Natal","2027-01-01":"Ano-Novo"},
+  /* Ciclos semanais: 12 sessões de 60 min, 2 por dia, seg a sáb (índices 0-1 = seg, 2-3 = ter...).
+     {rod:[...]} = rodízio: a cada semana da fase usa o próximo da lista. {folga:true} = sem sessão.
+     A tabela "Divisão do tempo" compara as horas planejadas (17/11 a 19/02) com a meta. */
+  ciclos:{
+    // Fase 1 · por semana: Prog 2, BD 2, Eng. Software 2, Port 2, RLE 2, Redes 1, Segurança 1
+    F1:[
+      {t:"bn_prog", n:"Programação: linguagens e POO"},{t:"bn_port", n:"Português FCC"},
+      {t:"bn_bd", n:"Banco de dados: modelagem e SQL"},{t:"bn_rle", n:"Raciocínio Lógico e Estatística"},
+      {t:"bn_es", n:"Eng. de software: processos e ágil"},{t:"bn_redes", n:"Redes de computadores"},
+      {t:"bn_prog", n:"Programação: exceções, testes, Git e SOLID"},{t:"bn_port", n:"Português FCC"},
+      {t:"bn_bd", n:"Banco de dados: transações, CTEs e DW"},{t:"bn_rle", n:"Raciocínio Lógico e Estatística"},
+      {t:"bn_es", n:"Eng. de software: qualidade e testes"},{t:"bn_seg", n:"Segurança da informação"},
+    ],
+    // Fase 2 · por semana: Web 1, DevOps+Nuvem 1, Arquitetura/Governança 1 (rodízio), Governança 1, SO 1, Mat. Financeira 1,
+    // Lógica 1, Português 1, BD 1, Prog 1 e 2 sessões de questões em rodízio de Eng. Software, Redes e Segurança
+    F2:[
+      {t:"bn_web", n:"Web e APIs: REST, OpenAPI, acessibilidade"},{t:"bn_port", n:"Português FCC"},
+      {t:"bn_bd", n:"Questões FCC: Banco de dados"},{rod:[{t:"bn_es", n:"Questões FCC: Eng. de software"},{t:"bn_redes", n:"Questões FCC: Redes"},{t:"bn_seg", n:"Questões FCC: Segurança"}]},
+      {t:"bn_devops", n:"DevOps, DevSecOps e Nuvem"},{t:"bn_prog", n:"Questões FCC: Programação"},
+      {rod:[{t:"bn_arq", n:"Arquitetura: camadas, eventos, DDD, microsserviços"},{t:"bn_gov", n:"Governança: PMBOK 8, ITIL 5 e COBIT 2019"}]},{rod:[{t:"bn_redes", n:"Questões FCC: Redes"},{t:"bn_seg", n:"Questões FCC: Segurança"},{t:"bn_es", n:"Questões FCC: Eng. de software"}]},
+      {t:"bn_matfin", n:"Matemática Financeira"},{t:"bn_rle", n:"Raciocínio Lógico e Estatística"},
+      {t:"bn_gov", n:"Governança: PDTIC, SLA, FinOps, 14.133 e TOGAF"},{t:"bn_so", n:"Sistemas operacionais"},
+    ],
+    // Fase 3 · só questões FCC. Por semana: Atualidades 2, Ética 2, Prog 1-2, os demais blocos A 1 cada e 1 correção do simulado de domingo
+    F3:[
+      {rod:[{t:"bn_prog", n:"Questões FCC: Programação"},{t:"bn_sim", n:"Correção do simulado de domingo"},{t:"bn_sim", n:"Correção do simulado de domingo"}]},{t:"bn_port", n:"Questões FCC: Português"},
+      {t:"bn_bd", n:"Questões FCC: Banco de dados"},{t:"bn_atual", n:"Atualidades: SFN, Copom/Selic, Pix e Open Finance"},
+      {t:"bn_prog", n:"Questões FCC: Programação"},{t:"bn_etica", n:"Ética, Compliance e ESG"},
+      {t:"bn_es", n:"Questões FCC: Eng. de software"},{t:"bn_rle", n:"Questões FCC: Lógica, Estatística e Mat. Financeira"},
+      {t:"bn_redes", n:"Questões FCC: Redes"},{t:"bn_atual", n:"Atualidades: fintechs, ESG e cenário econômico"},
+      {t:"bn_seg", n:"Questões FCC: Segurança"},{t:"bn_etica", n:"Ética: Guia de Conduta do Banestes e LGPD"},
+    ],
+    // Semana final · caderno de erros, Guia de Conduta e notícias; sábado 20/02 é descanso
+    FF:[
+      {t:"bn_sim", n:"Correção do simulado de 14/02"},{t:"bn_rev", n:"Caderno de erros: Específicos"},
+      {t:"bn_rev", n:"Caderno de erros: Específicos"},{t:"bn_etica", n:"Guia de Conduta Ética do Banestes"},
+      {t:"bn_rev", n:"Caderno de erros: Gerais"},{t:"bn_atual", n:"Notícias: Selic/Copom, Pix e Open Finance"},
+      {t:"bn_rev", n:"Caderno de erros: Específicos"},{t:"bn_etica", n:"Guia de Conduta Ética (2ª leitura)"},
+      {t:"bn_rev", n:"Caderno de erros: o que mais errei"},{t:"bn_atual", n:"Notícias recentes do mercado financeiro"},
+      {folga:true, n:"Descanso: véspera da prova"},{folga:true, n:"Descanso: véspera da prova"},
+    ],
+  },
+  passos:{
+    teoria:[
+      {de:0,ate:3,t:"Revise o caderno de erros dos dias anteriores."},
+      {de:3,ate:21,t:"Teoria curta com o Gemini: “Explique [tópico do edital] em 10 linhas, como cai na FCC, com um exemplo.”"},
+      {de:21,ate:57,t:"Questões FCC do mesmo tópico (filtro FCC, 2018+, Analista de TI)."},
+      {de:57,ate:60,t:"Anote cada erro em uma linha: o que confundi e qual é a regra certa."},
+    ],
+    questoes:[
+      {de:0,ate:3,t:"Revise o caderno de erros dos dias anteriores."},
+      {de:3,ate:57,t:"Só questões FCC do tópico (filtro FCC, 2018+, Analista de TI). Use o Gemini só para entender o que errou."},
+      {de:57,ate:60,t:"Anote cada erro em uma linha: o que confundi e qual é a regra certa."},
+    ],
+    correcao:[
+      {de:0,ate:50,t:"Corrija o simulado de domingo: em cada erro, ache a regra certa e veja de que bloco era."},
+      {de:50,ate:60,t:"Passe os erros para o caderno e anote os blocos mais fracos para a semana."},
+    ],
+    revisao:[
+      {de:0,ate:50,t:"Releia o caderno de erros e refaça as questões marcadas, sem matéria nova."},
+      {de:50,ate:60,t:"Marque as revisões feitas e anote o que ainda confunde."},
+    ],
+    leve:[
+      {de:0,ate:60,t:"Sessão leve de feriado: só o caderno de erros, no seu ritmo. Sem matéria nova e sem questões."},
+    ],
+  },
+};
+
 const PLANO = {
+  trilhas: {
+    bn:{nome:"Banestes – Dev Sistemas", prio:{
+      A:{titulo:"Estudar primeiro", quando:"Fase 1 · 17/11 a 20/12"},
+      B:{titulo:"Segunda leva", quando:"Fase 2 · 21/12 a 24/01"},
+      C:{titulo:"Por último", quando:"SO e Inglês na Fase 2 · Atualidades e Ética nas últimas 3 semanas"},
+    }},
+    bbcx:{nome:"BB, Caixa e outros (depois)", prio:null}, // usa PLANO.prioridades
+  },
   topicos: [
+    ...BANESTES,
     {id:"bd", p:"A", nome:"Banco de dados e SQL", onde:"Cai nos dois. BB 2023: 8 de 35 questões de TI. Caixa 2024: 3 de 30. É o assunto de maior peso.", itens:["Modelo E-R: entidades (inclusive fracas), atributos e cardinalidades","Mapeamento E-R para tabelas e chaves estrangeiras","Normalização: 1FN, 2FN e 3FN (dependências parciais e transitivas)","DDL: CREATE, ALTER, DROP, PRIMARY KEY e FOREIGN KEY","DML: SELECT, INSERT, UPDATE, DELETE, operadores lógicos e WHERE","JOINs: INNER, LEFT, RIGHT e produto cartesiano","COUNT, SUM, AVG, GROUP BY e HAVING","Subconsultas: IN, NOT IN e EXISTS","Conceitos de SGBD, instâncias, controle de acesso e concorrência","Índices, views e triggers"]},
     {id:"java", p:"A", nome:"Java e POO", onde:"Cai nos dois. BB 2023: 4 de 35, com rastreio de código. Caixa 2024: 3 de 30.", itens:["Classes, objetos, atributos, métodos e this","Herança: extends, construtores e super()","Polimorfismo: sobrecarga, sobrescrita (@Override), métodos estáticos e de instância","Interfaces e classes abstratas","Exceções: try, catch, finally, throw e throws","Coleções: ArrayList, HashSet e HashMap","Sintaxe: tipagem estática, operadores, if/else, while e for","Encapsulamento: public, private, protected e pacote","String e Character: charAt, length e concat"]},
     {id:"python", p:"A", nome:"Python para dados", onde:"Cai nos dois. BB 2023: 4 de 35. Caixa 2024: 3 de 30. np.dot caiu nas duas provas.", itens:["Listas e tuplas","Dicionários","Slicing","Pandas: Series, DataFrames, df[['x','y']] e filtros booleanos","NumPy: vetores, matrizes, np.dot e np.where","scikit-learn: fit, predict e coeficientes lineares"]},
@@ -505,7 +728,7 @@ const PLANO = {
     B:{titulo:"Começa em mar/2027", quando:"ganha força no 2º semestre"},
     C:{titulo:"Só quando o edital sair", quando:"pós-edital"},
     D:{titulo:"Banestes Técnico (opcional)", quando:"FCC · inscrições até 23/11/2026, prova em 24/01/2027"},
-    E:{titulo:"Depois do diploma", quando:"Dataprev, Serpro e Petrobras · Banestes TI ainda sem conteúdo publicado"},
+    E:{titulo:"Depois do diploma", quando:"Dataprev, Serpro e Petrobras"},
   },
   ciclo: {
     A:[{t:"bd",n:"Banco de dados: modelagem e normalização"},{t:"port",n:"Português: interpretação"},{t:"java",n:"Java e POO"},{t:"bd",n:"SQL na prática + questões de BD"},{t:"ed",n:"Estruturas de dados"},{t:"est",n:"Estatística"}],
@@ -521,8 +744,6 @@ const PLANO = {
   concursos:[
     {n:"Caixa – Técnico Bancário TI", banca:"Cesgranrio", exige:"Nível médio", agora:true, sit:"Edital de 2024 venceu em ago/2026; novo em estudo", prova:"60 questões: TI 30, Comportamentos Digitais 5, Português 5, Inglês 5, Mat. Financeira 5, Estatística 5, Ética/Compliance 5 + redação"},
     {n:"BB – Agente de Tecnologia", banca:"Cesgranrio", exige:"Nível médio", agora:true, sit:"Sem edital; em fev/2026 o BB disse que não havia previsão", prova:"70 questões: TI 35 (peso 1,5), Português 10, Inglês 5, Matemática 5, Atualidades 5, Estatística 5, Bancários 5 + redação"},
-    {n:"Banestes – Técnico Bancário", banca:"FCC", exige:"Nível médio", agora:true, sit:"Inscrições até 23/11/2026, prova em 24/01/2027", prova:"70 questões, cargo generalista: só 5 de Informática. Opcional, só como treino de prova real"},
-    {n:"Banestes – Analista de TI", banca:"FCC", exige:"Graduação em TI", agora:false, sit:"Seleção de 2027, homologação até jun/2027", prova:"80 questões previstas; 440 CR em Desenvolvimento"},
     {n:"Dataprev – Analista de TI", banca:"FGV", exige:"Graduação", agora:false, sit:"Prova aplicada em 11/10/2026; próximo só em alguns anos", prova:"70 questões: 40 gerais (peso 1) + 30 específicas (peso 2,5)"},
     {n:"Serpro – Analista", banca:"Cebraspe", exige:"Graduação", agora:false, sit:"Concurso de 2023 vigente até nov/2027; sem novo edital", prova:"120 itens Certo/Errado + prova prática de programação"},
     {n:"Petrobras – Analista de Sistemas", banca:"Cesgranrio", exige:"Graduação", agora:false, sit:"Edital de nível superior aguardado, sem data", prova:"Português, Inglês + 3 blocos de TI"},
@@ -536,11 +757,14 @@ const PLANO = {
   ],
 };
 const TOP = Object.fromEntries(PLANO.topicos.map(t=>[t.id,t]));
+const trDe = t=>t.tr||"bbcx";
+const prioDe = tr=>tr==="bn"?PLANO.trilhas.bn.prio:PLANO.prioridades;
+const rotTrilha = t=>trDe(t)==="bn"?"Banestes":"BB/Caixa";
 const STATUS = [{k:"–",n:"Não iniciado"},{k:"E",n:"Estudando"},{k:"R",n:"Revisando"},{k:"D",n:"Dominado"}];
 const OFFS = [1,7,30];
 const REF_A = new Date(2026,10,2); // segunda 02/11/2026 = Semana A
 
-const S = {db:null, topicos:{}, sessoes:[], erros:[], simulados:{}, abertos:new Set(), prio:"todas", fErros:"hoje", podeGravar:true};
+const S = {db:null, topicos:{}, sessoes:[], erros:[], simulados:{}, abertos:new Set(), trilha:"bn", prio:"todas", fErros:"hoje", podeGravar:true};
 
 /* ---------- datas ---------- */
 const pad = n=>String(n).padStart(2,"0");
@@ -590,7 +814,7 @@ async function baixar(){
   if(pendente()){ enviar(); return; } // o navegador tem alterações que a nuvem ainda não recebeu
   const {data,error}=await sb.from("progresso").select("dados,atualizado").eq("user_id",usuario.id).maybeSingle();
   if(error){ setSync("Sem conexão · mostrando a cópia do navegador","red"); return; }
-  if(data){ aplicarDados(data.dados); cacheLocal(); renderAll(); setSync("Salvo na nuvem","green"); }
+  if(data){ aplicarDados(data.dados); const h=herdar(); cacheLocal(); renderAll(); setSync("Salvo na nuvem","green"); if(h) gravar(); }
   else { setSync("Conta nova · salvando…","amber"); enviar(); } // primeira vez: sobe o que já houver no navegador
 }
 function dadosAtuais(){ return {versao:1, salvoEm:new Date().toISOString(), topicos:S.topicos, sessoes:S.sessoes, erros:S.erros, simulados:S.simulados}; }
@@ -607,101 +831,177 @@ function statsTopico(id){
   for(const s of S.sessoes) if(s.topico===id){q+=s.questoes||0;a+=s.acertos||0;m+=s.minutos||0;n++;if(!ult||s.data>ult)ult=s.data;}
   return {q,a,m,ult,n};
 }
-function estadoTopico(id){ const d=S.topicos[id]||{}; return {status:d.status||0, itens:d.itens||{}, nota:d.nota||""}; }
+function estadoTopico(id){ const d=S.topicos[id]||{}; const e={status:d.status||0, itens:d.itens||{}, nota:d.nota||""}; if(d.herdado) e.herdado=d.herdado; return e; }
+
+/* Aproveita o progresso da trilha antiga: na 1ª vez que um assunto do Banestes é visto, marca os itens cujo
+   equivalente já estava marcado. Fica registrado em "herdado" para não remarcar o que você desmarcar depois.
+   Nada da trilha antiga é alterado. Devolve true se mudou algo. */
+const refOk = ref=>{ const [id,k]=ref.split(":"); return !!(S.topicos[id]?.itens||{})[k]; };
+function herdar(){
+  let mudou=false;
+  for(const t of PLANO.topicos){
+    if(!t.herda || S.topicos[t.id]?.herdado) continue;
+    const e=estadoTopico(t.id), it={...e.itens}, de={};
+    for(const [i,regra] of Object.entries(t.herda))
+      if(regra.split("|").some(alt=>alt.split("+").every(refOk)) && !it[i]){ it[i]=true; de[i]=regra; }
+    S.topicos[t.id]={status:e.status, itens:it, nota:e.nota, herdado:de};
+    if(Object.keys(de).length && !e.status) S.topicos[t.id].status=1;
+    mudou=true;
+  }
+  return mudou;
+}
+const fontesHerda = t=>[...new Set(Object.values(t.herda||{}).flatMap(r=>r.split(/[|+]/).map(x=>x.split(":")[0])))];
 function proxRev(e){ const r=e.revisoes||[]; const idx=OFFS.findIndex((_,i)=>!r[i]); if(idx<0) return null; return {idx, data:addDias(e.data,OFFS[idx])}; }
 function errosHoje(){ const h=hoje(); return S.erros.filter(e=>{const p=proxRev(e);return p&&p.data<=h}); }
 
 /* ---------- render: cabeçalho e Hoje ---------- */
+/* ---------- Banestes: fases e contagem ---------- */
+const diasAte = (alvo,h=hoje())=>Math.round((parse(alvo)-parse(h))/864e5);
+function faseDe(h){
+  const f=BN.fases.find(f=>h>=f.de && h<=f.ate);
+  if(f) return f;
+  if(h<BN.fases[0].de) return {id:"F0", n:"Antes da Fase 1", t:"A Fase 1 começa em 17/11."};
+  if(h===BN.prova) return {id:"PROVA", n:"Dia da prova", t:"Boa prova!"};
+  return {id:"POS", n:"Depois da prova", t:"Prova feita. Resultado final previsto para 31/05/2027."};
+}
+function horasBanestes(){ let m=0; for(const s of S.sessoes) if(s.data>=INICIO_BN && s.data<BN.prova) m+=s.minutos||0; return m/60; }
+/* Ciclo da semana: fase pela terça-feira (a Fase 1 começa na terça, 17/11), rodízios pelo nº da semana na fase
+   e feriados leves (1 sessão de caderno de erros + 1 folga). */
+function faseDaSemana(seg){ const f=faseDe(addDias(seg,1)); return BN.ciclos[f.id]?f:(f.id==="F0"?BN.fases[0]:BN.fases.at(-1)); }
+function cicloDaSemana(seg){
+  const f=faseDaSemana(seg), sem=Math.round((parse(seg)-parse(segunda(f.de)))/(7*864e5));
+  const itens=BN.ciclos[f.id].map(it=>it.rod?{...it.rod[sem%it.rod.length]}:{...it});
+  for(const [d,nome] of Object.entries(BN.leves)) if(segunda(d)===seg){
+    const k=2*((parse(d).getDay()+6)%7);
+    itens[k]={t:"bn_rev", n:`Revisão leve do caderno de erros (${nome})`, leve:true};
+    itens[k+1]={folga:true, n:`Folga (${nome})`};
+  }
+  return {fase:f, itens};
+}
+// Horas planejadas por assunto, dia a dia, de 17/11 a 19/02 (só seg a sáb; os simulados de domingo ficam fora)
+const PLANEJADO = (()=>{ const h={}; for(let d=BN.fases[0].de; d<"2027-02-20"; d=addDias(d,1)){ const w=(parse(d).getDay()+6)%7; if(w===6) continue;
+  const its=cicloDaSemana(segunda(d)).itens; for(const it of [its[2*w],its[2*w+1]]) if(!it.folga) h[it.t]=(h[it.t]||0)+SESSAO_MIN/60; } return h; })();
+const HORAS_TOTAL = Object.values(PLANEJADO).reduce((a,b)=>a+b,0);
+const fmtH = x=>x.toFixed(1).replace(".",",").replace(",0","");
+
+/* ---------- render: cabeçalho e Hoje ---------- */
 function renderHeader(){
-  const h=hoje(), d=parse(h), seg=segunda(h), L=letraSemana(seg);
-  document.getElementById("sub-hoje").textContent = `${DIASEM[d.getDay()][0].toUpperCase()+DIASEM[d.getDay()].slice(1)}, ${curta(h)} de ${d.getFullYear()} · Semana ${L} · 50 min por dia`;
-  const As=PLANO.topicos.filter(t=>t.p==="A"); let tot=0,fe=0; for(const t of As){tot+=t.itens.length; const it=estadoTopico(t.id).itens; fe+=t.itens.filter((_,i)=>it[i]).length;}
-  let min=0; for(const s of S.sessoes) min+=s.minutos||0; const hrs=min/60;
+  const h=hoje(), d=parse(h), f=faseDe(h), falta=diasAte(BN.prova,h);
+  document.getElementById("sub-hoje").textContent = `${DIASEM[d.getDay()][0].toUpperCase()+DIASEM[d.getDay()].slice(1)}, ${curta(h)} de ${d.getFullYear()} · ${f.n} · ${BN.horasDia} h por dia, seg a sáb`;
+  const As=PLANO.topicos.filter(t=>trDe(t)==="bn"&&t.p==="A"); let tot=0,fe=0; for(const t of As){tot+=t.itens.length; const it=estadoTopico(t.id).itens; fe+=t.itens.filter((_,i)=>it[i]).length;}
+  const hrs=horasBanestes();
   document.getElementById("hero-prog").innerHTML = [
-    {l:"Prioridade A", v:`${fe} de ${tot} itens`, p:tot?fe/tot:0},
-    {l:"Meta de horas", v:`${hrs.toFixed(1).replace(".",",")} de 400 h`, p:Math.min(1,hrs/400)},
+    {l:"Banestes · Prioridade A", v:`${fe} de ${tot} itens`, p:tot?fe/tot:0},
+    {l:"Horas até a prova", v:`${fmtH(hrs)} de ${HORAS_TOTAL} h`, p:Math.min(1,hrs/HORAS_TOTAL)},
   ].map(x=>`<div class="hp"><div class="hp-l"><span>${x.l}</span><span class="num">${x.v}</span></div><div class="hp-bar"><i style="width:${Math.max(x.p>0?2:0,Math.round(x.p*100))}%"></i></div></div>`).join("");
-  const fase = h < "2026-11-01" ? "Começo: Fase 1 em nov/2026" : h < "2027-03-01" ? "Fase 1 · só Prioridade A" : "Prioridade B liberada";
-  document.getElementById("head-chips").innerHTML = `<span class="chip pen">${fase}</span><span class="chip">Alvo: BB e Caixa</span>`;
+  const cont = falta>1?`Prova em ${falta} dias`:falta===1?"Prova amanhã":falta===0?"Prova hoje":"Prova feita";
+  document.getElementById("head-chips").innerHTML = `<span class="chip pen">${esc(f.n)}</span><span class="chip">${cont} · 21/02</span><span class="chip">Alvo: Banestes · Dev Sistemas</span>`;
 }
 function renderTiles(){
   const seg=segunda(hoje());
-  const sem=S.sessoes.filter(s=>s.semana===seg);
-  const slotsFeitos=new Set(sem.map(s=>s.slot).filter(Boolean)).size;
+  const {feitos,itens}=slotsSemana(seg);
+  const slotsFeitos=Object.keys(feitos).length, slotsTotal=itens.filter(it=>!it.folga).length;
   let q=0,a=0,m=0; for(const s of S.sessoes){q+=s.questoes||0;a+=s.acertos||0;m+=s.minutos||0;}
   const p=pct(a,q);
   const pend=errosHoje().length;
   document.getElementById("tiles").innerHTML = [
-    {v:`${slotsFeitos}<small>/6</small>`, l:"sessões na semana"},
+    {v:`${slotsFeitos}<small>/${slotsTotal}</small>`, l:"sessões na semana"},
     {v:`${(m/60).toFixed(1).replace(".",",")}<small> h</small>`, l:"estudadas no total"},
     {v:q?`${p}<small>%</small>`:"—", l:q?`acerto em ${q} questões`:"acerto nas questões", c:accCls(p)},
     {v:String(pend), l:pend===1?"revisão de erro hoje":"revisões de erro hoje", c:pend?"acc-r":""},
   ].map(t=>`<div class="tile"><div class="v ${t.c||""}">${t.v}</div><div class="l">${t.l}</div></div>`).join("");
 }
+// Semanas a partir de 16/11/2026 usam o ciclo do Banestes (sessões gravadas com ciclo:"bn"); as anteriores, o ciclo A/B antigo.
+const cicloBn = seg=>seg>=INICIO_BN;
 function slotsSemana(seg){
-  const L=letraSemana(seg), feitos={};
-  for(const s of S.sessoes) if(s.semana===seg && s.slot) feitos[s.slot]=s;
-  const prox = [1,2,3,4,5,6].find(i=>!feitos[i]) || null;
-  return {L, feitos, prox, itens:PLANO.ciclo[L]};
+  const bn=cicloBn(seg), L=bn?"":letraSemana(seg), feitos={};
+  for(const s of S.sessoes) if(s.semana===seg && s.slot && (s.ciclo==="bn")===bn) feitos[s.slot]=s;
+  const c = bn?cicloDaSemana(seg):null, itens = bn?c.itens:PLANO.ciclo[L];
+  const prox = itens.map((_,i)=>i+1).find(i=>!feitos[i] && !itens[i-1].folga) || null;
+  return {bn, L, feitos, prox, itens, fase:c?.fase};
 }
+const diaDoSlot = (bn,i)=>bn?PLANO.dias[Math.floor(i/2)]:PLANO.dias[i];
+function passosDe(it, fase){
+  if(!fase) return PLANO.passos;
+  if(it?.leve) return BN.passos.leve;
+  if(it?.t==="bn_sim") return BN.passos.correcao;
+  if(it?.t==="bn_rev") return BN.passos.revisao;
+  return fase.id==="F1"||fase.id==="F2" ? BN.passos.teoria : BN.passos.questoes;
+}
+let PASSOS_ATUAIS = PLANO.passos;
 function renderCiclo(){
-  const h=hoje(), seg=segunda(h), {L,feitos,prox,itens}=slotsSemana(seg);
-  document.getElementById("cycle-title").textContent = `Semana ${L} · ${curta(seg)} a ${curta(addDias(seg,6))}`;
-  document.getElementById("cycle").innerHTML = itens.map((it,i)=>{
-    const n=i+1, f=feitos[n];
-    return `<div class="slot ${f?"done":""} ${n===prox?"next":""}"><span class="sn">${f?"✓":n}</span><span class="sd">${PLANO.dias[i]}</span><span class="st">${f?"feita":n===prox?"próxima":""}</span><span class="t">${esc(it.n)}</span></div>`;
+  const h=hoje(), seg=segunda(h), {bn,L,feitos,prox,itens,fase}=slotsSemana(seg), f=faseDe(h);
+  document.getElementById("cycle-title").textContent = bn ? `Ciclo da ${fase.n} · ${curta(seg)} a ${curta(addDias(seg,6))}` : `Semana ${L} · ${curta(seg)} a ${curta(addDias(seg,6))}`;
+  const cy=document.getElementById("cycle"); cy.classList.toggle("dupla",bn);
+  cy.innerHTML = itens.map((it,i)=>{
+    const n=i+1, fe=feitos[n];
+    if(it.folga) return `<div class="slot folga"><span class="sn">–</span><span class="sd">${diaDoSlot(bn,i)}</span><span class="st"></span><span class="t">${esc(it.n)}</span></div>`;
+    return `<div class="slot ${fe?"done":""} ${n===prox?"next":""} ${it.leve?"leve":""}"><span class="sn">${fe?"✓":n}</span><span class="sd">${diaDoSlot(bn,i)}</span><span class="st">${fe?"feita":n===prox?"próxima":""}</span><span class="t">${esc(it.n)}</span></div>`;
   }).join("");
+  document.getElementById("cycle-nota")?.remove();
+  if(bn) cy.insertAdjacentHTML("afterend", `<div id="cycle-nota"><div class="lembrete cycle-note"><b>${esc(fase.n)}:</b> ${esc(fase.t)}</div></div>`);
   const nc=document.getElementById("next-card");
+  const ativas=itens.filter(it=>!it.folga).length;
   if(!prox){
-    nc.innerHTML = `<div class="eyebrow">Ciclo completo</div><div class="titulo">Semana fechada. Domingo é descanso.</div><p class="muted">As 6 sessões da Semana ${L} estão registradas. Na segunda começa a Semana ${L==="A"?"B":"A"}.</p>`;
+    const dom = fase?.id==="F3" ? "Domingo é dia de simulado: 80 questões em 4 h." : fase?.id==="FF" ? "Domingo é a prova. Descanse." : "Domingo é descanso.";
+    nc.innerHTML = `<div class="eyebrow">Ciclo completo</div><div class="titulo">Semana fechada. ${dom}</div><p class="muted">As ${ativas} sessões da semana estão registradas.</p>`;
+    PASSOS_ATUAIS = PLANO.passos;
   } else {
     const it=itens[prox-1];
-    nc.innerHTML = `<div class="eyebrow">Próxima sessão · ${prox} de 6</div>
+    PASSOS_ATUAIS = passosDe(bn?it:null, fase);
+    const tp=TOP[it.t];
+    nc.innerHTML = `<div class="eyebrow">Próxima sessão · ${prox} de ${itens.length}${it.leve?" · feriado":""}</div>
       <div class="titulo">${esc(it.n)}</div>
-      <div class="muted" style="font-size:.9rem">${esc(TOP[it.t].nome)} · prioridade ${TOP[it.t].p}</div>
-      <ol class="steps" id="steps">${PLANO.passos.map((p,i)=>`<li data-i="${i}"><span class="mono">${p.de}–${p.ate} min</span><span>${esc(p.t)}</span></li>`).join("")}</ol>
-      <div class="timer"><span class="clock" id="clock">50:00</span>
+      <div class="muted" style="font-size:.9rem">${esc(tp.nome)} · ${rotTrilha(tp)}${tp.oculto?"":`, prioridade ${tp.p}`}</div>
+      <ol class="steps" id="steps">${PASSOS_ATUAIS.map((p,i)=>`<li data-i="${i}"><span class="mono">${p.de}–${p.ate} min</span><span>${esc(p.t)}</span></li>`).join("")}</ol>
+      <div class="timer"><span class="clock" id="clock">${pad(SESSAO_MIN)}:00</span>
         <button class="btn primary small" type="button" id="t-go">Iniciar</button>
         <button class="btn small" type="button" id="t-reset">Zerar</button>
-        <span class="muted" id="t-msg" style="font-size:.85rem"></span></div>`;
+        <span class="muted" id="t-msg" style="font-size:.85rem"></span></div>
+      <div class="lembrete" style="margin-top:14px">${esc(BN.lembrete)}</div>`;
     bindTimer();
   }
   // pré-seleciona o formulário
   const sel=document.getElementById("s-slot");
   if(!sel.dataset.touched){ sel.value = prox?String(prox):"0"; syncTopicoDoSlot(); }
 }
+function itensDoForm(){ const seg=segunda(document.getElementById("s-data").value||hoje()); return slotsSemana(seg).itens; }
 function renderFormSessao(){
-  const sel=document.getElementById("s-slot"), L=letraSemana(segunda(document.getElementById("s-data").value||hoje()));
+  const sel=document.getElementById("s-slot");
   const cur=sel.value;
-  sel.innerHTML = PLANO.ciclo[L].map((it,i)=>`<option value="${i+1}">${i+1} · ${esc(it.n)}</option>`).join("")+`<option value="0">Sessão avulsa (fora do ciclo)</option>`;
-  if(cur) sel.value=cur;
-  const opts = Object.keys(PLANO.prioridades).map(p=>`<optgroup label="Prioridade ${p}">${PLANO.topicos.filter(t=>t.p===p).map(t=>`<option value="${t.id}">${esc(t.nome)}</option>`).join("")}</optgroup>`).join("");
+  sel.innerHTML = itensDoForm().map((it,i)=>it.folga?"":`<option value="${i+1}">${i+1} · ${esc(it.n)}</option>`).join("")+`<option value="0">Sessão avulsa (fora do ciclo)</option>`;
+  if(cur && sel.querySelector(`option[value="${cur}"]`)) sel.value=cur;
+  const opts = Object.keys(PLANO.trilhas).map(tr=>Object.keys(prioDe(tr)).map(p=>{
+    const ts=PLANO.topicos.filter(t=>trDe(t)===tr&&t.p===p); if(!ts.length) return "";
+    return `<optgroup label="${esc(PLANO.trilhas[tr].nome)} · ${p}">${ts.map(t=>`<option value="${t.id}">${esc(t.nome)}</option>`).join("")}</optgroup>`;
+  }).join("")).join("") + `<optgroup label="Banestes · revisão e simulados">${PLANO.topicos.filter(t=>t.oculto).map(t=>`<option value="${t.id}">${esc(t.nome)}</option>`).join("")}</optgroup>`;
   for(const id of ["s-topico","e-topico"]){ const s=document.getElementById(id); const v=s.value; s.innerHTML=opts; if(v) s.value=v; }
 }
 function syncTopicoDoSlot(){
   const n=Number(document.getElementById("s-slot").value);
   if(!n) return;
-  const L=letraSemana(segunda(document.getElementById("s-data").value||hoje()));
-  document.getElementById("s-topico").value = PLANO.ciclo[L][n-1].t;
+  const it=itensDoForm()[n-1]; if(it && !it.folga) document.getElementById("s-topico").value = it.t;
 }
 
-/* ---------- timer de 50 min ---------- */
-const T={rest:50*60, run:false, h:null};
+/* ---------- timer da sessão ---------- */
+const DUR = SESSAO_MIN*60;
+const T={rest:DUR, run:false, h:null};
 function bindTimer(){
   const go=document.getElementById("t-go"), rs=document.getElementById("t-reset");
   if(!go) return;
   go.onclick=()=>{ T.run?pararTimer():iniciarTimer(); };
-  rs.onclick=()=>{ pararTimer(); T.rest=50*60; desenharTimer(); document.getElementById("t-msg").textContent=""; };
+  rs.onclick=()=>{ pararTimer(); T.rest=DUR; desenharTimer(); document.getElementById("t-msg").textContent=""; };
   desenharTimer();
 }
-function iniciarTimer(){ if(T.rest<=0) T.rest=50*60; T.run=true; const fim=Date.now()+T.rest*1000; T.h=setInterval(()=>{T.rest=Math.max(0,Math.round((fim-Date.now())/1000)); desenharTimer(); if(T.rest<=0){pararTimer(); const m=document.getElementById("t-msg"); if(m) m.textContent="Sessão concluída. Registre ao lado.";}},500); desenharTimer(); }
+function iniciarTimer(){ if(T.rest<=0) T.rest=DUR; T.run=true; const fim=Date.now()+T.rest*1000; T.h=setInterval(()=>{T.rest=Math.max(0,Math.round((fim-Date.now())/1000)); desenharTimer(); if(T.rest<=0){pararTimer(); const m=document.getElementById("t-msg"); if(m) m.textContent="Sessão concluída. Registre ao lado.";}},500); desenharTimer(); }
 function pararTimer(){ T.run=false; clearInterval(T.h); desenharTimer(); }
 function desenharTimer(){
   const c=document.getElementById("clock"); if(!c) return;
   c.textContent=`${pad(Math.floor(T.rest/60))}:${pad(T.rest%60)}`;
-  document.getElementById("t-go").textContent = T.run?"Pausar":(T.rest<50*60&&T.rest>0?"Continuar":"Iniciar");
-  const passado=(50*60-T.rest)/60;
-  document.querySelectorAll("#steps li").forEach((li,i)=>{const p=PLANO.passos[i]; li.classList.toggle("on", (T.run||T.rest<50*60) && passado>=p.de && passado<p.ate);});
+  document.getElementById("t-go").textContent = T.run?"Pausar":(T.rest<DUR&&T.rest>0?"Continuar":"Iniciar");
+  const passado=(DUR-T.rest)/60;
+  const ps=PASSOS_ATUAIS;
+  document.querySelectorAll("#steps li").forEach((li,i)=>{const p=ps[i]; li.classList.toggle("on", (T.run||T.rest<DUR) && passado>=p.de && passado<p.ate);});
 }
 
 /* ---------- erros ---------- */
@@ -737,22 +1037,32 @@ function renderAssuntos(){
   const box=document.getElementById("lista-assuntos");
   if(box.contains(document.activeElement) && document.activeElement.tagName==="TEXTAREA"){ S.pendenteAssuntos=true; return; }
   S.pendenteAssuntos=false;
-  const ps = S.prio==="todas"?Object.keys(PLANO.prioridades):[S.prio];
+  const tr=S.trilha, PR=prioDe(tr);
+  if(S.prio!=="todas" && !PR[S.prio]) S.prio="todas";
+  document.getElementById("f-trilha").innerHTML = Object.entries(PLANO.trilhas).map(([k,v])=>`<button type="button" data-tr="${k}" aria-pressed="${k===tr}">${esc(v.nome)}</button>`).join("");
+  document.getElementById("f-prio").innerHTML = ["todas",...Object.keys(PR)].map(p=>`<button type="button" data-p="${p}" aria-pressed="${p===S.prio}">${p==="todas"?"Todas":"Prioridade "+p}</button>`).join("");
+  document.getElementById("trilha-info").innerHTML = tr==="bn" ? `<div class="lembrete" style="margin-bottom:10px">${esc(BN.lembrete)}</div>
+    <div class="aviso"><b>Questões por bloco são estimativas.</b> O edital só fixa 50 questões de Conhecimentos Específicos, sem dividir por assunto. As faixas (≈) vêm das provas recentes de Analista de TI da FCC (TRT-1, TRT-6 e TRT-15 de 2025; TRT-20 de 2024), em que Programação e Redes lideraram, seguidas de Segurança e Banco de Dados. Os itens são o texto do Anexo IV, cargo 04. Itens com <span class="herd">↺</span> vieram marcados da trilha antiga.</div>`
+    : `<div class="aviso">Trilha antiga (BB, Caixa e outros). Fica guardada para depois do Banestes, com tudo o que você já marcou.</div>`;
+  const ps = S.prio==="todas"?Object.keys(PR):[S.prio];
   box.innerHTML = ps.map(p=>{
-    const ts=PLANO.topicos.filter(t=>t.p===p);
+    const ts=PLANO.topicos.filter(t=>trDe(t)===tr&&t.p===p);
     const dom=ts.filter(t=>estadoTopico(t.id).status===3).length;
-    return `<div class="prio-head"><span class="prio-letter">${p}</span><h2>${PLANO.prioridades[p].titulo}</h2><span class="muted" style="font-size:.85rem">${PLANO.prioridades[p].quando} · ${dom} de ${ts.length} dominados</span></div>
+    return `<div class="prio-head"><span class="prio-letter">${p}</span><h2>${PR[p].titulo}</h2><span class="muted" style="font-size:.85rem">${PR[p].quando} · ${dom} de ${ts.length} dominados</span></div>
     <div class="topics">${ts.map(htmlTopico).join("")}</div>`;
   }).join("");
 }
 function htmlTopico(t){
-  const e=estadoTopico(t.id), st=statsTopico(t.id), aberto=S.abertos.has(t.id);
+  const e=estadoTopico(t.id), st=statsTopico(t.id), aberto=S.abertos.has(t.id), herd=e.herdado||{};
   const feitos=t.itens.filter((_,i)=>e.itens[i]).length, p=pct(st.a,st.q);
+  const notasAntigas = aberto ? fontesHerda(t).map(id=>({id,n:estadoTopico(id).nota})).filter(x=>x.n.trim()) : [];
   return `<div class="topic ${aberto?"open":""}" data-t="${t.id}">
     <div class="topic-row">
       <div style="min-width:0">
         <button class="topic-name" type="button" data-toggle="${t.id}" aria-expanded="${aberto}"><span class="car">›</span><span>${esc(t.nome)}</span></button>
         <div class="topic-meta">
+          ${t.est?`<span class="est" title="Estimativa, não está no edital">≈ ${esc(t.est.replace("~",""))} questões (estimativa)</span>`:""}
+          ${t.qtd?`<span class="est ed">${esc(t.qtd)}</span>`:""}
           <span><span class="bar"><i style="width:${Math.round(100*feitos/t.itens.length)}%"></i></span> <span class="num">${feitos}/${t.itens.length}</span> itens</span>
           <span class="num">${st.q} questões</span>
           ${p!=null?`<span class="num ${accCls(p)}">${p}% acerto</span>`:""}
@@ -763,7 +1073,7 @@ function htmlTopico(t){
     </div>
     ${aberto?`<div class="topic-body">
       <p class="onde">${esc(t.onde)}</p>
-      <ul class="checks">${t.itens.map((it,i)=>`<li><label><input type="checkbox" id="ck-${t.id}-${i}" data-ck="${t.id}:${i}" ${e.itens[i]?"checked":""}><span>${esc(it)}</span></label></li>`).join("")}</ul>
+      <ul class="checks">${t.itens.map((it,i)=>`<li><label><input type="checkbox" id="ck-${t.id}-${i}" data-ck="${t.id}:${i}" ${e.itens[i]?"checked":""}><span>${esc(it)}${herd[i]?`<span class="herd" title="Marcado a partir de: ${esc(herd[i].split(/[|+]/).map(r=>{const [id,k]=r.split(":");return TOP[id]?TOP[id].itens[k]:r}).join(" / "))}">↺ trilha antiga</span>`:""}</span></label></li>`).join("")}</ul>
       <div>
         <div class="minis">
           <div class="mini"><div class="v">${st.n}</div><div class="l">sessões</div></div>
@@ -771,6 +1081,7 @@ function htmlTopico(t){
           <div class="mini"><div class="v ${accCls(p)}">${p!=null?p+"%":"—"}</div><div class="l">acerto</div></div>
         </div>
         <label class="f">Anotações<textarea id="nota-${t.id}" data-nota="${t.id}" placeholder="Pegadinhas, links de aula, o que falta revisar">${esc(e.nota)}</textarea></label>
+        ${notasAntigas.map(x=>`<div class="nota-antiga"><b>Anotação em “${esc(TOP[x.id].nome)}” (trilha antiga):</b>\n${esc(x.n)}</div>`).join("")}
       </div>
     </div>`:""}
   </div>`;
@@ -778,6 +1089,7 @@ function htmlTopico(t){
 function salvarTopico(id, patch){
   const atual=estadoTopico(id);
   const novo={status:atual.status, itens:{...atual.itens}, nota:atual.nota, ...patch};
+  if(atual.herdado) novo.herdado=atual.herdado;
   S.topicos[id]=novo; gravar("topicos/"+id, novo);
 }
 
@@ -787,26 +1099,87 @@ function renderHistorico(){
   const ts=document.getElementById("t-sessoes");
   ts.innerHTML = ss.length ? ss.map(s=>{const p=pct(s.acertos,s.questoes);const L=letraSemana(s.semana);
     return `<div class="h-row"><div class="h-date"><b>${parse(s.data).getDate()}</b><span>${MESES[parse(s.data).getMonth()]}</span></div>
-      <div class="h-main"><div class="h-t">${esc(TOP[s.topico]?.nome||s.topico)}</div><div class="h-m"><span class="chip">${s.slot?`${L}${s.slot}`:"avulsa"}</span><span class="num">${s.minutos||0} min</span><span class="num">${s.questoes||0} questões</span>${p!=null?`<span class="num ${accCls(p)}">${p}%</span>`:""}</div></div>
+      <div class="h-main"><div class="h-t">${esc(TOP[s.topico]?.nome||s.topico)}</div><div class="h-m"><span class="chip">${!s.slot?"avulsa":s.ciclo==="bn"?`sessão ${s.slot}`:`${L}${s.slot}`}</span><span class="num">${s.minutos||0} min</span><span class="num">${s.questoes||0} questões</span>${p!=null?`<span class="num ${accCls(p)}">${p}%</span>`:""}</div></div>
       <button class="btn ghost small" type="button" data-del-sessao="${s.id}">Apagar</button></div>`}).join("")
     : `<div class="empty">Nenhuma sessão registrada. Use o formulário da aba Hoje no fim de cada sessão.</div>`;
   const sem={};
   for(const s of S.sessoes){const k=s.semana;(sem[k]||(sem[k]={n:0,m:0,q:0,a:0}));sem[k].n++;sem[k].m+=s.minutos||0;sem[k].q+=s.questoes||0;sem[k].a+=s.acertos||0;}
   const ks=Object.keys(sem).sort().reverse();
   document.getElementById("t-semanas").innerHTML = ks.length ? ks.map(k=>{const w=sem[k],p=pct(w.a,w.q);
-    return `<tr><td style="white-space:nowrap">${letraSemana(k)} · ${curta(k)}</td><td class="num">${w.n}</td><td class="num">${(w.m/60).toFixed(1).replace(".",",")}</td><td class="num">${w.q}</td><td class="num ${accCls(p)}">${p!=null?p+"%":"—"}</td></tr>`}).join("")
+    return `<tr><td style="white-space:nowrap">${cicloBn(k)?faseDe(addDias(k,1)).n.replace("Antes da Fase 1","Fase 1"):letraSemana(k)} · ${curta(k)}</td><td class="num">${w.n}</td><td class="num">${(w.m/60).toFixed(1).replace(".",",")}</td><td class="num">${w.q}</td><td class="num ${accCls(p)}">${p!=null?p+"%":"—"}</td></tr>`}).join("")
     : `<tr><td colspan="5" class="muted">As semanas aparecem aqui depois da primeira sessão.</td></tr>`;
 }
 
 /* ---------- concursos ---------- */
+function htmlSim(s, ph){ const d=S.simulados[s.id]||{};
+  return `<label class="sim"><input type="checkbox" id="sim-${s.id}" data-sim="${s.id}" ${d.feito?"checked":""}><span>${esc(s.n)}${s.dia?` <span class="muted mono" style="font-size:.8rem">· dom ${curta(s.dia)}</span>`:""}</span><input type="text" id="simr-${s.id}" data-simr="${s.id}" value="${esc(d.resultado||"")}" placeholder="${ph}" maxlength="40"></label>`; }
+function renderBanestes(){
+  const box=document.getElementById("banestes");
+  if(box.contains(document.activeElement)&&document.activeElement.type==="text") return;
+  const h=hoje(), falta=diasAte(BN.prova,h), f=faseDe(h);
+  const proxData = BN.datas.find(x=>x.d>=h);
+  const horas = BN.divisao.map(x=>({...x, h:HORAS_TOTAL*x.p/100, pl:x.ids.reduce((a,id)=>a+(PLANEJADO[id]||0),0)}));
+  const rev = PLANEJADO.bn_rev||0;
+  box.innerHTML = `<div class="panel foco">
+    <div class="foco-top">
+      <div>
+        <div class="eyebrow">Foco atual · Edital 01/2027 · FCC</div>
+        <h2>Banestes – Analista de TI · Desenvolvimento de Sistemas</h2>
+        <div class="muted" style="font-size:.88rem;margin-top:4px">Código de opção 04 · 440 vagas de cadastro reserva (242 de ampla concorrência) · R$ 6.393,38 · 30 h semanais em Vitória</div>
+      </div>
+      <div class="count"><b>${Math.max(0,falta)}</b><span>${falta===1?"dia":"dias"} até a prova (21/02/2027)</span></div>
+    </div>
+    <div class="lembrete"><b>Lembrete:</b> ${esc(BN.lembrete)}</div>
+    <div class="grid3">
+      <div class="box"><h3>Datas (Anexo V)</h3><ul class="datas">${BN.datas.map(x=>`<li class="${x.d<h?"passou":x===proxData?"prox":""}"><span class="mono">${curta(x.d)}${x.d.slice(0,4)!==h.slice(0,4)?" "+x.d.slice(2,4):""}</span><span>${esc(x.t)}</span></li>`).join("")}</ul></div>
+      <div class="box"><h3>Prova (cap. 9 e 11)</h3><ul>
+        <li>Conhecimentos Gerais: 30 questões, peso 1 — Português 10; Raciocínio Lógico e Estatística 10 (inclui Matemática Financeira); Atualidades do Mercado Financeiro e Digital 5; Ética, Compliance e ESG 5.</li>
+        <li>Conhecimentos Específicos: 50 questões, peso 2.</li>
+        <li>5 alternativas por questão. Sem redação.</li>
+        <li>Nota = (Gerais + 2 × Específicos) ÷ 3, cada parte de 0 a 10. Aprovação com 6,00 ou mais; sem mínimo por matéria.</li>
+      </ul>
+      <h3 style="margin-top:10px">Peso de cada parte na nota</h3>
+      <div class="pesos">${BN.pesos.map(x=>`<div class="peso"><span>${esc(x.n)}</span><span class="num" style="text-align:right">${String(x.p).replace(".",",")}%</span><span class="bar"><i style="width:${x.p}%"></i></span></div>`).join("")}</div></div>
+      <div class="box"><h3>Regras que importam</h3><ul>
+        <li><b>Desempate (12.3):</b> 1º Estatuto da Pessoa Idosa (60+); 2º mais acertos em Específicos; 3º mais acertos em Português; 4º maior idade; 5º função de jurado.</li>
+        <li><b>Diploma:</b> só é exigido na admissão (3.1 e 3.2), não na inscrição.</li>
+        <li><b>Desistência (14.6):</b> se convocado, você pode desistir 1 vez e ir para o fim da lista. A 2ª recusa elimina.</li>
+        <li><b>Validade (15.3):</b> 2 anos a partir da homologação, prorrogável por mais 2.</li>
+        <li><b>Resultado final:</b> previsto para 31/05/2027.</li>
+        <li><b>Locais:</b> Vitória, São Mateus ou Cachoeiro de Itapemirim (escolhe na inscrição).</li>
+      </ul></div>
+    </div>
+    <div>
+      <h3>Cronograma em fases</h3>
+      <p class="muted" style="margin:2px 0 10px;font-size:.88rem">Hoje: <b>${esc(f.n)}</b>${proxData?` · próxima data do edital: ${curta(proxData.d)}, ${esc(proxData.t.toLowerCase())}`:""}</p>
+      <div class="fases">${BN.fases.map(x=>`<div class="fase ${x.id===f.id?"agora":""}"><div class="fh"><h3>${esc(x.n)}${x.id===f.id?` <span class="chip pen">agora</span>`:""}</h3><span class="mono muted" style="font-size:.8rem">${curta(x.de)} a ${curta(x.ate)}</span></div><p>${esc(x.t)}</p><p class="muted">${esc(x.d)}</p></div>`).join("")}</div>
+    </div>
+    <div>
+      <h3>Divisão do tempo até a prova</h3>
+      <p class="muted" style="margin:2px 0 10px;font-size:.88rem">${BN.horasDia} h por dia, de segunda a sábado, de 17/11 a 19/02, com 25/12 e 01/01 reduzidos a 1 sessão leve: ${HORAS_TOTAL} h. “Meta” aplica a sua divisão a essas horas; “Nos ciclos” é o que os ciclos das 4 fases entregam. Os 3 simulados de domingo (4 h cada, 12 h) ficam fora dessa conta; os 3% de “Simulados” são para corrigi-los.</p>
+      <div class="tablewrap"><table>
+        <thead><tr><th>Matéria</th><th class="num">%</th><th class="num">Meta</th><th class="num">Nos ciclos</th></tr></thead>
+        <tbody>${horas.map(x=>{const dif=x.pl-x.h; return `<tr><td>${esc(x.n)}</td><td class="num">${x.p}%</td><td class="num">${fmtH(Math.round(x.h*2)/2)} h</td><td class="num">${fmtH(x.pl)} h <span class="muted" style="font-size:.78rem">(${Math.round(Math.abs(dif)*2)===0?"=":(dif>0?"+":"−")+fmtH(Math.round(Math.abs(dif)*2)/2)})</span></td></tr>`}).join("")}
+        <tr><td>Revisão do caderno de erros (semana final e feriados)</td><td class="num">—</td><td class="num">—</td><td class="num">${fmtH(rev)} h</td></tr>
+        <tr><td><b>Total</b></td><td class="num"><b>100%</b></td><td class="num"><b>${HORAS_TOTAL} h</b></td><td class="num"><b>${HORAS_TOTAL} h</b></td></tr></tbody>
+      </table></div>
+      <p class="muted" style="margin:6px 0 0;font-size:.8rem">As ${fmtH(rev)} h de revisão do caderno saem principalmente de Banco de Dados, Programação e Português, que é o que mais vai aparecer no caderno. Inglês técnico não tem sessão própria: treine lendo as questões de TI em inglês.</p>
+    </div>
+    <div>
+      <h3>Simulados da Fase 3</h3>
+      <p class="muted" style="margin:2px 0 10px;font-size:.88rem">Prova inteira de Analista de TI da FCC, 80 questões em 4 h, no domingo. Marque quando fizer e anote os acertos.</p>
+      <div class="sims">${BN.simulados.map(x=>htmlSim(x,"ex. 56/80")).join("")}</div>
+    </div>
+  </div>`;
+}
 function renderConcursos(){
+  renderBanestes();
   document.getElementById("conc").innerHTML = PLANO.concursos.map(c=>`<div class="c">
     <div class="h"><h3>${esc(c.n)}</h3><span class="chip ${c.agora?"green":""}">${c.agora?"Pode prestar":"Após diploma"}</span></div>
     <dl><dt>Banca</dt><dd>${esc(c.banca)}</dd><dt>Exige</dt><dd>${esc(c.exige)}</dd><dt>Situação</dt><dd>${esc(c.sit)}</dd><dt>Prova</dt><dd>${esc(c.prova)}</dd></dl></div>`).join("");
   const box=document.getElementById("sims");
   if(box.contains(document.activeElement)&&document.activeElement.type==="text") return;
-  box.innerHTML = PLANO.simulados.map(s=>{const d=S.simulados[s.id]||{};
-    return `<label class="sim"><input type="checkbox" id="sim-${s.id}" data-sim="${s.id}" ${d.feito?"checked":""}><span>${esc(s.n)}</span><input type="text" id="simr-${s.id}" data-simr="${s.id}" value="${esc(d.resultado||"")}" placeholder="Acertos, ex. 52/70" maxlength="40"></label>`}).join("");
+  box.innerHTML = PLANO.simulados.map(s=>htmlSim(s,"Acertos, ex. 52/70")).join("");
 }
 
 function renderAll(){ renderHeader(); renderTiles(); renderFormSessao(); renderCiclo(); renderErros(); renderAssuntos(); renderHistorico(); renderConcursos(); }
@@ -830,12 +1203,12 @@ document.getElementById("f-sessao").addEventListener("submit",e=>{
   const data=document.getElementById("s-data").value||hoje();
   const q=Math.max(0,parseInt(document.getElementById("s-q").value)||0);
   const a=Math.min(q,Math.max(0,parseInt(document.getElementById("s-a").value)||0));
-  const s={id:novoId(), data, semana:segunda(data), slot:Number(document.getElementById("s-slot").value)||0, topico:document.getElementById("s-topico").value, minutos:Math.max(0,parseInt(document.getElementById("s-min").value)||0), questoes:q, acertos:a, criado:Date.now()};
+  const s={id:novoId(), data, semana:segunda(data), slot:Number(document.getElementById("s-slot").value)||0, topico:document.getElementById("s-topico").value, ...(cicloBn(segunda(data))?{ciclo:"bn"}:{}), minutos:Math.max(0,parseInt(document.getElementById("s-min").value)||0), questoes:q, acertos:a, criado:Date.now()};
   S.sessoes.push(s); const {id,...body}=s; gravar("sessoes/"+id, body);
   if(estadoTopico(s.topico).status===0) salvarTopico(s.topico,{status:1});
   document.getElementById("s-q").value=""; document.getElementById("s-a").value="";
   delete document.getElementById("s-slot").dataset.touched;
-  pararTimer(); T.rest=50*60;
+  pararTimer(); T.rest=DUR;
   renderAll(); toast("s-toast","Sessão registrada");
 });
 document.getElementById("f-erro").addEventListener("submit",e=>{
@@ -847,14 +1220,15 @@ document.getElementById("f-erro").addEventListener("submit",e=>{
   renderErros(); renderTiles(); toast("e-toast",`Erro anotado. Primeira revisão em ${curta(addDias(er.data,1))}.`);
 });
 document.addEventListener("click",e=>{
-  const t=e.target.closest("[data-toggle],[data-st],[data-rev],[data-del-erro],[data-del-sessao],#f-prio button,#f-erros button");
+  const t=e.target.closest("[data-toggle],[data-st],[data-rev],[data-del-erro],[data-del-sessao],#f-trilha button,#f-prio button,#f-erros button");
   if(!t) return;
   if(t.dataset.toggle){ const id=t.dataset.toggle; S.abertos.has(id)?S.abertos.delete(id):S.abertos.add(id); renderAssuntos(); return; }
   if(t.dataset.st){ const [id,v]=t.dataset.st.split(":"); salvarTopico(id,{status:Number(v)}); renderAssuntos(); return; }
   if(t.dataset.rev){ const er=S.erros.find(x=>x.id===t.dataset.rev); const p=er&&proxRev(er); if(!p) return; const r=[...(er.revisoes||[false,false,false])]; r[p.idx]=true; er.revisoes=r; const {id,...body}=er; gravar("erros/"+id, body); renderErros(); renderTiles(); return; }
   if(t.dataset.delErro){ if(t.dataset.armed!=="1"){t.dataset.armed="1";t.textContent="Confirmar";setTimeout(()=>{t.dataset.armed="";t.textContent="Apagar"},3000);return;} S.erros=S.erros.filter(x=>x.id!==t.dataset.delErro); gravar("erros/"+t.dataset.delErro,null); renderErros(); renderTiles(); return; }
   if(t.dataset.delSessao){ if(t.dataset.armed!=="1"){t.dataset.armed="1";t.textContent="Confirmar";setTimeout(()=>{t.dataset.armed="";t.textContent="Apagar"},3000);return;} S.sessoes=S.sessoes.filter(x=>x.id!==t.dataset.delSessao); gravar("sessoes/"+t.dataset.delSessao,null); renderAll(); return; }
-  if(t.dataset.p){ S.prio=t.dataset.p; document.querySelectorAll("#f-prio button").forEach(b=>b.setAttribute("aria-pressed",b===t)); renderAssuntos(); return; }
+  if(t.dataset.tr){ S.trilha=t.dataset.tr; S.prio="todas"; renderAssuntos(); return; }
+  if(t.dataset.p){ S.prio=t.dataset.p; renderAssuntos(); return; }
   if(t.dataset.e){ S.fErros=t.dataset.e; document.querySelectorAll("#f-erros button").forEach(b=>b.setAttribute("aria-pressed",b===t)); renderErros(); return; }
 });
 document.addEventListener("change",e=>{
@@ -873,10 +1247,10 @@ document.getElementById("s-data").value=hoje();
 document.getElementById("e-data").value=hoje();
 mostrarAba();
 renderAll();
-setInterval(()=>{ if(document.getElementById("s-data").dataset.dia!==hoje()){ document.getElementById("s-data").dataset.dia=hoje(); renderHeader(); renderCiclo(); renderErros(); renderTiles(); } }, 60000);
+setInterval(()=>{ if(document.getElementById("s-data").dataset.dia!==hoje()){ document.getElementById("s-data").dataset.dia=hoje(); renderHeader(); renderCiclo(); renderErros(); renderTiles(); renderBanestes(); } }, 60000);
 document.getElementById("s-data").dataset.dia=hoje();
 
-try{ const raw=ls.get(CHAVE); if(raw) aplicarDados(JSON.parse(raw)); }catch(_){}
+try{ const raw=ls.get(CHAVE); if(raw){ aplicarDados(JSON.parse(raw)); herdar(); } }catch(_){} // só na memória; grava depois de baixar da nuvem
 renderAll();
 
 function entrou(sess){
@@ -926,7 +1300,7 @@ document.getElementById("b-importar").addEventListener("change",async e=>{
   try{
     const d=JSON.parse(await f.text());
     if(!d || !Array.isArray(d.sessoes)) throw new Error();
-    aplicarDados(d); gravar(); renderAll(); toast("b-toast","Backup importado");
+    aplicarDados(d); herdar(); gravar(); renderAll(); toast("b-toast","Backup importado");
   }catch(_){ toast("b-toast","Esse arquivo não é um backup do painel"); }
   e.target.value="";
 });
