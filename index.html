@@ -331,6 +331,42 @@ input,select{min-height:42px}
   .cycle.dupla{grid-auto-flow:row}
   .datas li{grid-template-columns:78px minmax(0,1fr)}
 }
+/* ---------- microtópicos ---------- */
+.slot{grid-template-areas:"sn sd st" "t t t" "b b b"}
+.slot .t{display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
+.slot .sb{grid-area:b;justify-self:start}
+.slot-btn{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:3px 10px;font-size:.72rem;font-weight:700;cursor:pointer;color:var(--muted);min-height:28px}
+.slot-btn:hover{border-color:var(--green);color:var(--green)}
+.slot-btn[aria-pressed="true"],.btn[data-marcar][aria-pressed="true"]{background:var(--green-soft);color:var(--green);border-color:transparent}
+.slot.estudado:not(.done){border-color:var(--green)}
+.slot.estudado .st{color:var(--green)}
+.next-card .titulo .bloco{color:var(--muted);font-weight:600}
+label.marcar{display:flex;gap:8px;align-items:center;margin-top:10px;font-size:.88rem;font-weight:700;cursor:pointer}
+label.marcar input{accent-color:var(--green);width:18px;height:18px;min-height:0}
+.prox-micro{font-size:.82rem;color:var(--muted);margin-top:4px}
+.prox-micro b{color:var(--ink);font-weight:700}
+.micros{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:2px}
+.micros label{display:grid;grid-template-columns:auto 2.2ch minmax(0,1fr);gap:6px;align-items:start;padding:5px 6px;border-radius:6px;cursor:pointer}
+.micros label:hover{background:var(--sunk)}
+.micros input{margin-top:4px;accent-color:var(--pen);min-height:0}
+.micros .mk{font-family:var(--f-mono);font-size:.8rem;color:var(--muted);text-align:right;padding-top:1px}
+.micros input:checked ~ .mn{color:var(--muted)}
+.mdata,.merr{font-family:var(--f-mono);font-size:.7rem;margin-left:6px;white-space:nowrap}
+.mdata{color:var(--green)}
+.merr{color:var(--red)}
+.parc{display:block;font-size:.78rem;color:var(--amber);margin-top:2px}
+.parc-tag{font-family:var(--f-mono);font-size:.7rem;color:var(--amber);white-space:nowrap}
+details.edital{margin-top:12px;border-top:1px solid var(--line);padding-top:10px}
+details.edital summary{cursor:pointer;font-weight:700;font-size:.85rem;color:var(--muted)}
+details.edital h4{font-size:.8rem;margin:10px 0 2px;font-family:var(--f-body)}
+details.edital ul{margin:6px 0 0;padding-left:18px;font-size:.82rem;color:var(--muted)}
+details.edital li.ok{color:var(--ink)}
+.h-micro{font-size:.82rem;color:var(--muted)}
+@media (max-width:560px){
+  .slot{grid-template-areas:"sn t st" "sn sd st" "sn b b"}
+  .slot .sb{margin-top:6px}
+  .slot.estudado:not(.done){box-shadow:inset 3px 0 0 var(--green)}
+}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 </head>
@@ -412,6 +448,10 @@ input,select{min-height:42px}
           <div class="row" style="margin-top:10px">
             <label class="f" style="grid-column:1/-1">Assunto<select id="s-topico"></select></label>
           </div>
+          <div class="row" style="margin-top:10px">
+            <label class="f" style="grid-column:1/-1">Microtópico<select id="s-micro"></select></label>
+          </div>
+          <label class="marcar" id="s-marcar-box" hidden><input type="checkbox" id="s-marcar" checked> Marcar este microtópico como estudado</label>
           <div class="row tres" style="margin-top:10px">
             <label class="f">Minutos<input type="number" id="s-min" min="1" max="600" value="60" inputmode="numeric"></label>
             <label class="f">Questões<input type="number" id="s-q" min="0" max="500" value="" placeholder="12" inputmode="numeric"></label>
@@ -452,6 +492,9 @@ input,select{min-height:42px}
         <div class="row">
           <label class="f">Assunto<select id="e-topico"></select></label>
           <label class="f">Data<input type="date" id="e-data" required></label>
+        </div>
+        <div class="row" style="margin-top:10px">
+          <label class="f">Microtópico (a Fase 3 puxa os que têm mais erros)<select id="e-micro"></select></label>
         </div>
         <div class="row" style="margin-top:10px">
           <label class="f">O que confundi<input type="text" id="e-q" required maxlength="400" placeholder="Achei que HAVING filtra antes do GROUP BY"></label>
@@ -570,6 +613,167 @@ const BANESTES = [
   {id:"bn_rev", tr:"bn", p:"X", oculto:true, nome:"Revisão do caderno de erros", onde:"", itens:[]},
   {id:"bn_sim", tr:"bn", p:"X", oculto:true, nome:"Simulados e correção", onde:"", itens:[]},
 ];
+/* Microtópicos: 1 microtópico = 1 sessão de 60 min (≈18 min de teoria, 36 de questões FCC, 6 de caderno de erros).
+   A ordem da lista é a prioridade dentro do bloco. Formato: [id, nome, cobre, parcial].
+   "cobre" = itens antigos que, marcados, cobrem o microtópico inteiro (a+b exige os dois; a|b aceita qualquer um);
+   "parcial" = itens antigos que cobrem só uma parte: aparecem com ↺, mas o microtópico fica desmarcado.
+   Os "itens" de cada bloco continuam sendo o texto do Anexo IV (seção "Texto do edital") e guardam as marcações antigas. */
+const mk = a=>a.map(([id,n,c="",p=""])=>({id,n,c,p:p?p.split(" "):[]}));
+const BLOCOS = {
+  bn_prog:{curto:"Programação", micros:mk([
+    ["logica","Lógica e leitura de código: tipos, operadores e precedência, if/switch/laços; rastrear a saída de um trecho","bn_prog:3+bn_prog:5+bn_prog:6","bn_prog:2 java:6"],
+    ["c1","C I: tipos, printf/scanf, operadores, laços (descobrir o que os printf imprimem)","","bn_prog:0"],
+    ["c2","C II: vetores, strings, ponteiros, funções, passagem por valor x referência","","bn_prog:0 comp_ti:2"],
+    ["java1","Java I: sintaxe, tipos primitivos x wrappers, String, operadores, controle de fluxo","","bn_prog:0 java:6 java:8 bn_prog:3 bn_prog:4 bn_prog:5 bn_prog:6"],
+    ["java2","Java II: classes, construtores, modificadores de acesso, static, this, packages","java:0+java:1+java:2+java:7+bn_prog:9","bn_prog:7 bn_prog:8"],
+    ["java3","Java III: herança, polimorfismo, sobrecarga x sobrescrita, classe abstrata x interface","java:1+java:2+java:3|bn_prog:8+bn_prog:10+java:3","bn_prog:7"],
+    ["java4","Java IV: exceções (checked/unchecked, try/catch/finally, throws), coleções (List, Set, Map), generics","","java:4 java:5 bn_prog:11"],
+    ["java5","Java V: JDBC (Connection, PreparedStatement, ResultSet), JPA básico, anotações do Spring Boot, JUnit e Mockito","","bn_prog:12 comp_ti:6"],
+    ["py1","Python I: tipos, listas, tuplas, dicionários, sets, slicing, list comprehension","","bn_prog:0 python:0 python:1 python:2"],
+    ["py2","Python II: funções, *args/**kwargs, classes, exceções, módulos e bibliotecas comuns","","bn_prog:0 comp_ti:3"],
+    ["cs","C# e .NET: sintaxe, propriedades, classes, exceções, LINQ básico, CLR e ASP.NET Core","","bn_prog:0 bn_prog:1 leitura:0"],
+    ["php","PHP: variáveis, arrays, superglobais ($_GET, $_POST, $_SESSION), funções, PDO","","bn_prog:0"],
+    ["solid","POO conceitual e SOLID (os 5 princípios com exemplos)","bn_prog:13"],
+    ["testes","Testes automatizados (unidade e integração), TDD x BDD, Git (commit, branch, merge x rebase), GitFlow, pull request, code review, uso responsável de IA no código","bn_prog:14+bn_prog:15+bn_prog:16+bn_prog:17+bn_prog:18","es:5 es:6"],
+  ])},
+  bn_bd:{curto:"Banco de dados", micros:mk([
+    ["sgbd","Conceitos de SGBD, arquitetura em 3 níveis, independência de dados","","bd:8"],
+    ["er","Modelo E-R: entidades, atributos, relacionamentos, cardinalidade, generalização/especialização","bn_bd:0","bd:0"],
+    ["mapeamento","Mapeamento E-R → relacional; chaves (primária, estrangeira, candidata); integridade","","bd:1 bd:3 bn_bd:0"],
+    ["normal","Normalização: dependência funcional, 1FN, 2FN, 3FN, FNBC","bn_bd:1","bd:2"],
+    ["ddl","SQL DDL (CREATE, ALTER, DROP, constraints) e DCL (GRANT, REVOKE)","bn_bd:2","bd:3"],
+    ["dml","SQL DML: SELECT, WHERE, ORDER BY, LIKE, IN, BETWEEN, NULL; INSERT, UPDATE, DELETE","bn_bd:2|bd:4"],
+    ["joins","Junções: INNER, LEFT, RIGHT, FULL, CROSS, self join","","bd:5"],
+    ["agreg","GROUP BY, HAVING, funções de agregação; subconsultas (IN, EXISTS, correlacionadas)","bd:6+bd:7","bn_bd:8"],
+    ["cte","CTEs (WITH, recursiva) e window functions (ROW_NUMBER, RANK, OVER, PARTITION BY)","","bn_bd:8"],
+    ["transacoes","Transações: ACID, COMMIT/ROLLBACK, níveis de isolamento, concorrência, deadlock","bn_bd:3","bd:8"],
+    ["plsql","PL/SQL (Oracle 19c) e PL/pgSQL (PostgreSQL 14/15): procedures, functions, triggers, cursores; H2 Database","bn_bd:4+bn_bd:5+bn_bd:6+bn_bd:7","bd:9"],
+    ["indices","Índices, views, otimização básica de consultas; diferenças entre PostgreSQL e Oracle","","bd:9 comp_ti:0 comp_ti:1 bn_bd:5 bn_bd:6"],
+    ["dw","Modelagem dimensional: fatos, dimensões, métricas, estrela x floco de neve; DW, data mart, OLAP (drill, slice, dice), data lake","bn_bd:9+bn_bd:10","dw:0 dw:1 dw:4"],
+    ["nosql","NoSQL (documentos, chave-valor, colunas largas, grafos; teorema CAP); governança e qualidade de dados","bn_bd:11+bn_bd:12","dw:3"],
+  ])},
+  bn_es:{curto:"Eng. de software", micros:mk([
+    ["processos","Processos de software: cascata, incremental, espiral; ISO/IEC/IEEE 12207:2021","","bn_es:1 bn_es:7 comp_ti:8"],
+    ["scrum","Scrum: papéis, eventos, artefatos","es:0|bn_es:5"],
+    ["kanban","Kanban e XP (práticas: pareamento, TDD, integração contínua, refatoração)","es:1+comp_ti:7|bn_es:5"],
+    ["req","Engenharia de requisitos: elicitação, funcionais x não funcionais, histórias de usuário, critérios de aceitação, rastreabilidade","bn_es:6+es:8+bn_es:11","es:2"],
+    ["uml1","UML 2.5 I: diagramas de casos de uso e de classes","bn_es:3","es:3"],
+    ["uml2","UML 2.5 II: diagramas de sequência, atividades, estados, componentes e implantação","bn_es:3"],
+    ["bpmn","BPMN: eventos, atividades, gateways, pools e lanes","bn_es:4","bn_es:8"],
+    ["iso25010","Qualidade de produto: ISO/IEC 25010:2024","bn_es:12"],
+    ["cmmi","Maturidade de processo: CMMI-DEV v2.0 e MR-MPS-SW 2023 (níveis)","bn_es:0+bn_es:2","gov:2"],
+    ["testes","Testes: níveis e tipos (unidade, integração, sistema, aceitação, regressão, desempenho, carga, estresse, segurança, usabilidade), caixa-branca x caixa-preta","bn_es:13","es:5"],
+    ["gcs","Gestão de configuração, versionamento semântico, code review, low-code e no-code","bn_es:14+bn_es:15+bn_es:16+bn_es:9","comp_ti:9"],
+    ["dados","Dados semiestruturados (XML, JSON), dicionário de dados, documentação técnica","bn_es:10+bn_es:11"],
+  ])},
+  bn_redes:{curto:"Redes", micros:mk([
+    ["modelos","Modelos OSI e TCP/IP; comutação de circuitos, pacotes e células; PAN a WWAN; meios de transmissão","bn_redes:0+bn_redes:1+bn_redes:2+bn_redes:4","redes:0"],
+    ["ipv4","IPv4: endereçamento, máscara, CIDR, cálculo de sub-redes","","bn_redes:5"],
+    ["ipv6","IPv6, ARP, ICMP, NAT","","bn_redes:5 bn_redes:6"],
+    ["tcpudp","TCP x UDP: portas, three-way handshake, controle de fluxo e de congestionamento","","bn_redes:6 redes:0"],
+    ["aplicacao","Protocolos de aplicação e portas: HTTP/HTTPS, DNS, DHCP, SMTP, POP, IMAP, FTP, SSH, LDAP","bn_redes:6","redes:0"],
+    ["roteamento","Roteamento: OSPF, BGP, MPLS; equipamentos (hub, switch, roteador)","bn_redes:3+bn_redes:7+bn_redes:8"],
+    ["ieee","IEEE 802.3, 802.1Q (VLAN), 802.1X, 802.11n/ac/ax; VXLAN, SDN, NFV","bn_redes:11+bn_redes:12+bn_redes:13"],
+    ["cabeamento","Cabeamento estruturado (NBR 14565:2019, categorias 5e, 6, 6a e 7), fibra monomodo x multimodo","bn_redes:9+bn_redes:10"],
+    ["servicos","Serviços: proxy, e-mail, servidores de aplicação (WildFly, JBoss EAP, Apache, IIS), VPN, QoS, VoIP (SIP, H.323), multicast/IGMP","bn_redes:14+bn_redes:15+bn_redes:19+bn_redes:20+bn_redes:21+bn_redes:25"],
+    ["gerencia","Gerência e monitoramento: SNMP (agentes, gerentes, MIBs), Zabbix, Elasticsearch/Logstash/Kibana, Grafana, Prometheus, Fluentd","bn_redes:22+bn_redes:26","bn_redes:16 bn_redes:17 bn_redes:18 bn_redes:23 bn_redes:24"],
+  ])},
+  bn_seg:{curto:"Segurança", micros:mk([
+    ["principios","Princípios (confidencialidade, integridade, disponibilidade, autenticidade, não repúdio); ataques (malware, DoS/DDoS, phishing, man-in-the-middle)","seg:0+bn_seg:6","bn_seg:6"],
+    ["cripto","Criptografia simétrica x assimétrica, hashes, assinatura digital, certificados digitais","bn_seg:7+bn_seg:8+bn_seg:9"],
+    ["tls","SSL/TLS; autenticação, autorização e auditoria; RBAC e MFA","bn_seg:10+bn_seg:11+bn_seg:12"],
+    ["perimetro","Firewall, WAF, UTM, DMZ, proxy, NAC, IDS x IPS; VPN, ZTNA e Zero Trust; WPA2/WPA3","bn_seg:1+bn_seg:2+bn_seg:4+bn_seg:5+bn_seg:19","bn_seg:3 bn_seg:18"],
+    ["iso27001","ABNT NBR ISO/IEC 27001:2024 e 27002:2022","bn_seg:0"],
+    ["riscos","Riscos (ISO 27005:2023), incidentes (ISO 27035 e NIST SP 800-61 rev. 3), nuvem (ISO 27017)","bn_seg:15+bn_seg:16+bn_seg:17"],
+    ["owasp","OWASP Top 10:2021","bn_seg:22"],
+    ["iam","IAM, SSO, OAuth 2.0, OpenID Connect; SOC, SIEM, EDR","bn_seg:20+bn_seg:23","bn_seg:21"],
+    ["lgpd","LGPD: princípios, bases legais, direitos do titular, agentes de tratamento, ANPD, anonimização x pseudonimização","bn_seg:13+bn_seg:14","seg:1"],
+  ])},
+  bn_web:{p:"B", nome:"Web, arquitetura, DevOps e nuvem", curto:"Web, arquitetura, DevOps e nuvem", est:"~9–14",
+    onde:"Anexo IV, cargo 04: Desenvolvimento de aplicações web e mobile, Arquitetura de sistemas, DevOps e DevSecOps e Computação em nuvem, juntos num bloco só. A estimativa de questões é a soma das estimativas desses quatro blocos.",
+    edital:["bn_web","bn_arq","bn_devops","bn_nuvem"], micros:mk([
+    ["html","HTML5, CSS3 e Bootstrap 5 (semântica, seletores, box model, grid)","","bn_web:0"],
+    ["js","JavaScript e TypeScript (tipos, funções, async/await, DOM)","","bn_web:0 ling:0 leitura:3"],
+    ["react","React (componentes, props, state, hooks), Angular, Vue, React Native, Node.js","bn_web:1","mobile:2 leitura:3"],
+    ["rest","APIs REST: verbos, códigos de status HTTP, idempotência, paginação, versionamento, OpenAPI/Swagger, autenticação; JSON, XML e XML Schema","bn_web:2+bn_web:3+bn_web:6+bn_web:7+bn_web:8+bn_web:9+bn_web:13","arq:2 arq:3 arq:6"],
+    ["ux","UX, design responsivo e mobile-first, acessibilidade (WCAG 2.1/2.2 e ABNT NBR 17225:2025)","bn_web:10+bn_web:11"],
+    ["camadas","Arquiteturas em camadas, cliente-servidor, MVC, SOA, objetos distribuídos","bn_arq:0+bn_arq:1+arq:0","arq:5 bn_arq:3"],
+    ["micro","Microsserviços, eventos/filas/mensageria, DDD, arquitetura hexagonal, cloud-native, padrões de resiliência (API Gateway, service discovery, circuit breaker, retries, timeouts)","bn_arq:2+bn_arq:3+bn_arq:4+bn_arq:6","arq:1"],
+    ["cicd","CI/CD, pipelines, infraestrutura como código, DevSecOps, observabilidade (logs, métricas, traces)","bn_devops:0+bn_devops:1+bn_devops:2+bn_devops:4+bn_devops:5","es:7 bn_devops:6 bn_devops:16"],
+    ["docker","Docker (imagem, container, Dockerfile), Kubernetes (pod, deployment, service), Rancher; blue/green e canary","bn_devops:7+bn_devops:8+bn_devops:10+bn_devops:12+bn_devops:14","bn_devops:9 bn_devops:11 bn_devops:15"],
+    ["nuvem","Nuvem: IaaS, PaaS e SaaS; pública, privada, híbrida e multicloud; escalabilidade, alta disponibilidade, custos, estratégias de migração","bn_nuvem:0+bn_nuvem:1+bn_nuvem:2+bn_nuvem:4+bn_nuvem:5+bn_nuvem:6","arq:4 bn_nuvem:3 bn_nuvem:7"],
+  ])},
+  bn_arq:{p:"X", oculto:true, junto:"bn_web"}, bn_devops:{p:"X", oculto:true, junto:"bn_web"}, bn_nuvem:{p:"X", oculto:true, junto:"bn_web"},
+  bn_gov:{curto:"Governança", micros:mk([
+    ["pmbok","PMBOK 8ª edição: princípios e domínios de desempenho","bn_gov:0"],
+    ["itil","ITIL Version 5: conceitos, cadeia de valor, práticas (incidente, problema, mudança)","bn_gov:1","gov:0"],
+    ["cobit","COBIT 2019: princípios, objetivos (EDM, APO, BAI, DSS, MEA), fatores de design","bn_gov:2|gov:1"],
+    ["pdtic","PETIC/PDTIC, portfólio, SLA x OLA, melhoria contínua, TCO, ROI, CAPEX, OPEX, FinOps","bn_gov:3+bn_gov:4+bn_gov:5+bn_gov:6+bn_gov:7"],
+    ["riscos","Gestão de riscos (ISO 31000:2018) e contratações de TIC (Lei 14.133/2021)","bn_gov:8+bn_gov:9","bn_gov:10"],
+    ["togaf","Arquitetura corporativa e TOGAF (ADM), gestão de stakeholders, redação técnica","bn_gov:11+bn_gov:12+bn_gov:13+bn_gov:15","bn_gov:14"],
+  ])},
+  bn_so:{curto:"Sistemas operacionais", micros:mk([
+    ["processos","Processos e threads, estados, escalonamento (FIFO, SJF, Round Robin, prioridade)","bn_so:0+bn_so:1"],
+    ["memoria","Sincronização, deadlock e starvation; memória (paginação, segmentação, memória virtual, substituição de páginas)","bn_so:2+bn_so:3+bn_so:4"],
+    ["linux","Linux (Red Hat/Oracle Linux): comandos, permissões, administração; E/S e armazenamento","bn_so:5+bn_so:6+bn_so:7","so:3 bn_so:13"],
+    ["windows","Windows Server 2019/2022, Active Directory, PowerShell, virtualização, containers, hardening","bn_so:8+bn_so:9+bn_so:10+bn_so:11+bn_so:12+bn_so:14"],
+  ])},
+  bn_port:{curto:"Português", micros:mk([
+    ["interp1","Interpretação I: ideia central, inferência","bn_port:2|port:0"],
+    ["interp2","Interpretação II: gêneros, intertextualidade, figuras de linguagem, denotação x conotação","bn_port:4+bn_port:6+bn_port:7","bn_port:3"],
+    ["coesao","Coesão: pronomes e conectivos (valor semântico)","bn_port:19+comp_bas:0|port:6+comp_bas:0"],
+    ["reescrita","Reescrita e equivalência de frases","bn_port:20"],
+    ["pontuacao","Pontuação (vírgula)","bn_port:11|port:2"],
+    ["crase","Crase","bn_port:1|port:1"],
+    ["concverbal","Concordância verbal","bn_port:13|port:3"],
+    ["concnominal","Concordância nominal","bn_port:13|port:3"],
+    ["regencia","Regência verbal e nominal","bn_port:17|port:4"],
+    ["vozes","Vozes verbais; flexão e correlação de tempos e modos","bn_port:14+bn_port:15+bn_port:16"],
+    ["pronomes","Pronomes e colocação pronominal","bn_port:12+port:5"],
+    ["sintaxe","Coordenação e subordinação; termos da oração","bn_port:18+bn_port:8|bn_port:18+comp_bas:2"],
+    ["ortografia","Ortografia, acentuação, formação de palavras, discurso direto x indireto","bn_port:0+bn_port:9+bn_port:5","comp_bas:1 bn_port:10"],
+  ])},
+  bn_rle:{nome:"Raciocínio Lógico, Estatística e Matemática Financeira", curto:"Lógica, Estatística e Mat. Financeira", qtd:"10 questões (edital)",
+    onde:"Conhecimentos Gerais: 10 questões no total, contando a Matemática Financeira (microtópicos 11 a 15, que entram na Fase 2).",
+    edital:["bn_rle","bn_matfin"], micros:mk([
+    ["prop","Lógica proposicional: conectivos e tabela-verdade","mat:0","bn_rle:2"],
+    ["equiv","Equivalências e negações (De Morgan, contrapositiva)","","mat:0 bn_rle:2"],
+    ["argumentos","Argumentos e validade; diagramas lógicos (todo, algum, nenhum)","bn_rle:2"],
+    ["relacoes","Lógica de relações (pessoas, lugares, objetos) e sequências","bn_rle:0+bn_rle:1"],
+    ["numeros","Números inteiros e racionais, frações, MMC e MDC, problemas","bn_rle:3+bn_rle:4"],
+    ["proporcao","Razão, proporção, divisão proporcional, regra de três","bn_rle:5|mat:4"],
+    ["porcent","Porcentagem, acréscimos e descontos sucessivos","bn_rle:5|mat:1"],
+    ["contagem","Contagem: princípios multiplicativo e aditivo, permutações e combinações","bn_rle:9|mat:5"],
+    ["media","Média (simples e ponderada), mediana, moda; gráficos e tabelas","bn_rle:6+bn_rle:8","est:0 comp_bas:4"],
+    ["dispersao","Dispersão: amplitude, desvio médio, variância, desvio padrão","bn_rle:7","est:1"],
+    ["juros","Juros simples x compostos, montante","bn_matfin:0","matfin:2"],
+    ["taxas","Taxas nominal, efetiva, real e equivalentes; descontos comercial e racional","bn_matfin:1+bn_matfin:5","matfin:4 bn_matfin:3"],
+    ["series","Equivalência de capitais, séries de pagamentos, valor presente e valor futuro","bn_matfin:2+bn_matfin:4+bn_matfin:7","matfin:3"],
+    ["amort","Amortização: Price, SAC e Misto","bn_matfin:6","matfin:0 matfin:1"],
+    ["vpl","Fluxo de caixa, VPL e TIR","bn_matfin:7+bn_matfin:8","matfin:3"],
+  ])},
+  bn_matfin:{p:"X", oculto:true, junto:"bn_rle"},
+  bn_atual:{curto:"Atualidades", micros:mk([
+    ["sfn","SFN: CMN, Bacen, CVM, Susep, Previc e operadores","bn_atual:0|banc:0|bt_banc:0"],
+    ["copom","Política monetária, Copom, Selic, inflação e metas","bn_atual:1|banc:2|bt_banc:2"],
+    ["mercados","Mercado financeiro e de capitais: produtos e indicadores","bn_atual:2|banc:3","bt_banc:1"],
+    ["pix","Pix, Open Finance, moedas digitais, fintechs, bancos digitais, instituições de pagamento","bn_atual:3+bn_atual:4|banc:1","bt_banc:3"],
+    ["inclusao","Educação e inclusão financeira, proteção do consumidor, finanças sustentáveis","bn_atual:5+bn_atual:6","banc:5 bt_banc:6"],
+    ["cenario","Cenário econômico e notícias recentes (rever na semana final)","bn_atual:7+bn_atual:8"],
+  ])},
+  bn_etica:{curto:"Ética, Compliance e ESG", micros:mk([
+    ["etica","Ética e moral; ética no serviço público e em instituições financeiras; integridade e conflito de interesses","bn_etica:0+bn_etica:1+bn_etica:2","etica:6"],
+    ["compliance","Governança corporativa e compliance: controles internos, riscos, canais de denúncia, programas de integridade","bn_etica:3+bn_etica:4","etica:7"],
+    ["corrupcao","Corrupção, fraudes e lavagem de dinheiro","bn_etica:5|etica:0+etica:5"],
+    ["dados","Proteção de dados e privacidade (noções de LGPD; ligar com o item 9 de Segurança)","bn_etica:6+bn_etica:7|etica:1"],
+    ["esg","ESG, sustentabilidade, responsabilidade socioambiental, Agenda 2030 e ODS","bn_etica:8+bn_etica:9+bn_etica:10+bn_etica:11","etica:4 banc:5"],
+    ["guia","Guia de Conduta Ética do Banestes (leitura do documento oficial)","bn_etica:12"],
+  ])},
+  // Inglês técnico não vira microtópico: é só uma nota, porque cai dentro das questões de TI.
+  bn_ing:{p:"X", oculto:true, nota:true},
+};
+for(const t of BANESTES) Object.assign(t, BLOCOS[t.id]||{});
+const NOTA_INGLES = "Inglês técnico não vira microtópico: ele cai dentro das próprias questões de TI. Leia com atenção os trechos em inglês das questões FCC (documentação, mensagens de erro, siglas) e anote no caderno as palavras que travarem.";
 const SESSAO_MIN = 60;
 const INICIO_BN = "2026-11-16"; // semana em que o ciclo do Banestes começa (Fase 1 começa na terça, 17/11)
 const BN = {
@@ -578,7 +782,7 @@ const BN = {
   fases:[
     {id:"F1", n:"Fase 1", de:"2026-11-17", ate:"2026-12-20", t:"Blocos A, com teoria curta e questões FCC.", d:"Programação, Banco de Dados, Eng. de Software, Redes, Segurança, Português e Raciocínio Lógico e Estatística."},
     {id:"F2", n:"Fase 2", de:"2026-12-21", ate:"2027-01-24", t:"Blocos B e C de TI e Matemática Financeira; mantenha Português e Lógica.", d:"Web/APIs, DevOps, Nuvem, Governança, Arquitetura e Sistemas Operacionais; Inglês técnico só na leitura das questões. 25/12 e 01/01: só 1 sessão leve do caderno de erros."},
-    {id:"F3", n:"Fase 3", de:"2027-01-25", ate:"2027-02-14", t:"Só questões FCC. Atualidades e Ética/ESG entram aqui.", d:"1 simulado completo por semana, no domingo: 80 questões em 4 h (31/01, 07/02 e 14/02)."},
+    {id:"F3", n:"Fase 3", de:"2027-01-25", ate:"2027-02-14", t:"Só questões FCC, puxando os microtópicos com mais erros no caderno. Atualidades e Ética/ESG entram aqui, um microtópico por sessão.", d:"1 simulado completo por semana, no domingo: 80 questões em 4 h (31/01, 07/02 e 14/02)."},
     {id:"FF", n:"Semana final", de:"2027-02-15", ate:"2027-02-20", t:"Revisar o caderno de erros, ler o Guia de Conduta Ética do Banestes e as notícias recentes (Selic/Copom, Pix, Open Finance).", d:"Sábado, 20/02, é descanso."},
   ],
   // Anexo V do edital
@@ -601,8 +805,8 @@ const BN = {
     {n:"Arquitetura + Web + DevOps + Nuvem", p:8},{n:"Governança de TI", p:4},{n:"Sistemas operacionais", p:3},
     {n:"Português", p:12},{n:"Raciocínio Lógico e Estatística (com Mat. Financeira)", p:12},{n:"Atualidades", p:5},{n:"Ética, Compliance e ESG", p:5},{n:"Simulados (correção)", p:3},
   ].map(x=>({...x, ids:{"Banco de dados":["bn_bd"],"Programação":["bn_prog"],"Eng. de software e processos":["bn_es"],"Redes":["bn_redes"],"Segurança":["bn_seg"],
-    "Arquitetura + Web + DevOps + Nuvem":["bn_arq","bn_web","bn_devops","bn_nuvem"],"Governança de TI":["bn_gov"],"Sistemas operacionais":["bn_so"],"Português":["bn_port"],
-    "Raciocínio Lógico e Estatística (com Mat. Financeira)":["bn_rle","bn_matfin"],"Atualidades":["bn_atual"],"Ética, Compliance e ESG":["bn_etica"],"Simulados (correção)":["bn_sim"]}[x.n]})),
+    "Arquitetura + Web + DevOps + Nuvem":["bn_web"],"Governança de TI":["bn_gov"],"Sistemas operacionais":["bn_so"],"Português":["bn_port"],
+    "Raciocínio Lógico e Estatística (com Mat. Financeira)":["bn_rle"],"Atualidades":["bn_atual"],"Ética, Compliance e ESG":["bn_etica"],"Simulados (correção)":["bn_sim"]}[x.n]})),
   pesos:[{n:"Conhecimentos Específicos (50 × peso 2)", p:66.7},{n:"Português (10)", p:11.1},{n:"Raciocínio Lógico e Estatística (10)", p:11.1},{n:"Atualidades (5)", p:5.6},{n:"Ética, Compliance e ESG (5)", p:5.6}],
   simulados:[
     {id:"bn_sim1", n:"FCC TRT-1 2025 – Analista de TI", dia:"2027-01-31"},
@@ -614,43 +818,46 @@ const BN = {
   leves:{"2026-12-25":"Natal","2027-01-01":"Ano-Novo"},
   /* Ciclos semanais: 12 sessões de 60 min, 2 por dia, seg a sáb (índices 0-1 = seg, 2-3 = ter...).
      {rod:[...]} = rodízio: a cada semana da fase usa o próximo da lista. {folga:true} = sem sessão.
+     Cada sessão de um bloco mostra o PRÓXIMO microtópico não concluído dele; se o bloco já acabou, puxa o microtópico com mais erros.
+     modo:"erros" = sempre puxa os microtópicos com mais erros no caderno (Fase 3). mi = microtópico fixo.
      A tabela "Divisão do tempo" compara as horas planejadas (17/11 a 19/02) com a meta. */
   ciclos:{
     // Fase 1 · por semana: Prog 2, BD 2, Eng. Software 2, Port 2, RLE 2, Redes 1, Segurança 1
     F1:[
-      {t:"bn_prog", n:"Programação: linguagens e POO"},{t:"bn_port", n:"Português FCC"},
-      {t:"bn_bd", n:"Banco de dados: modelagem e SQL"},{t:"bn_rle", n:"Raciocínio Lógico e Estatística"},
-      {t:"bn_es", n:"Eng. de software: processos e ágil"},{t:"bn_redes", n:"Redes de computadores"},
-      {t:"bn_prog", n:"Programação: exceções, testes, Git e SOLID"},{t:"bn_port", n:"Português FCC"},
-      {t:"bn_bd", n:"Banco de dados: transações, CTEs e DW"},{t:"bn_rle", n:"Raciocínio Lógico e Estatística"},
-      {t:"bn_es", n:"Eng. de software: qualidade e testes"},{t:"bn_seg", n:"Segurança da informação"},
+      {t:"bn_prog"},{t:"bn_port"},
+      {t:"bn_bd"},{t:"bn_rle"},
+      {t:"bn_es"},{t:"bn_redes"},
+      {t:"bn_prog"},{t:"bn_port"},
+      {t:"bn_bd"},{t:"bn_rle"},
+      {t:"bn_es"},{t:"bn_seg"},
     ],
-    // Fase 2 · por semana: Web 1, DevOps+Nuvem 1, Arquitetura/Governança 1 (rodízio), Governança 1, SO 1, Mat. Financeira 1,
-    // Lógica 1, Português 1, BD 1, Prog 1 e 2 sessões de questões em rodízio de Eng. Software, Redes e Segurança
+    // Fase 2 · por semana: Web/Arq/DevOps/Nuvem 2, Governança 1-2, SO 1, Lógica/Mat. Financeira 2, Português 1, BD 1, Prog 1
+    // e 2-3 sessões em rodízio de Eng. Software, Redes e Segurança (Redes e Segurança têm mais microtópicos que sessões na Fase 1)
     F2:[
-      {t:"bn_web", n:"Web e APIs: REST, OpenAPI, acessibilidade"},{t:"bn_port", n:"Português FCC"},
-      {t:"bn_bd", n:"Questões FCC: Banco de dados"},{rod:[{t:"bn_es", n:"Questões FCC: Eng. de software"},{t:"bn_redes", n:"Questões FCC: Redes"},{t:"bn_seg", n:"Questões FCC: Segurança"}]},
-      {t:"bn_devops", n:"DevOps, DevSecOps e Nuvem"},{t:"bn_prog", n:"Questões FCC: Programação"},
-      {rod:[{t:"bn_arq", n:"Arquitetura: camadas, eventos, DDD, microsserviços"},{t:"bn_gov", n:"Governança: PMBOK 8, ITIL 5 e COBIT 2019"}]},{rod:[{t:"bn_redes", n:"Questões FCC: Redes"},{t:"bn_seg", n:"Questões FCC: Segurança"},{t:"bn_es", n:"Questões FCC: Eng. de software"}]},
-      {t:"bn_matfin", n:"Matemática Financeira"},{t:"bn_rle", n:"Raciocínio Lógico e Estatística"},
-      {t:"bn_gov", n:"Governança: PDTIC, SLA, FinOps, 14.133 e TOGAF"},{t:"bn_so", n:"Sistemas operacionais"},
+      {t:"bn_web"},{t:"bn_port"},
+      {t:"bn_bd"},{rod:[{t:"bn_es"},{t:"bn_redes"},{t:"bn_seg"}]},
+      {t:"bn_web"},{t:"bn_prog"},
+      {rod:[{t:"bn_redes"},{t:"bn_gov"},{t:"bn_seg"},{t:"bn_gov"},{t:"bn_redes"}]},{rod:[{t:"bn_redes"},{t:"bn_seg"},{t:"bn_es"}]},
+      {t:"bn_rle"},{t:"bn_rle"},
+      {t:"bn_gov"},{t:"bn_so"},
     ],
-    // Fase 3 · só questões FCC. Por semana: Atualidades 2, Ética 2, Prog 1-2, os demais blocos A 1 cada e 1 correção do simulado de domingo
+    // Fase 3 · só questões FCC, percorrendo os microtópicos com mais erros. Atualidades 2 e Ética 2 por semana (microtópicos novos),
+    // Prog 1-2, os demais blocos A 1 cada e 1 correção do simulado de domingo
     F3:[
-      {rod:[{t:"bn_prog", n:"Questões FCC: Programação"},{t:"bn_sim", n:"Correção do simulado de domingo"},{t:"bn_sim", n:"Correção do simulado de domingo"}]},{t:"bn_port", n:"Questões FCC: Português"},
-      {t:"bn_bd", n:"Questões FCC: Banco de dados"},{t:"bn_atual", n:"Atualidades: SFN, Copom/Selic, Pix e Open Finance"},
-      {t:"bn_prog", n:"Questões FCC: Programação"},{t:"bn_etica", n:"Ética, Compliance e ESG"},
-      {t:"bn_es", n:"Questões FCC: Eng. de software"},{t:"bn_rle", n:"Questões FCC: Lógica, Estatística e Mat. Financeira"},
-      {t:"bn_redes", n:"Questões FCC: Redes"},{t:"bn_atual", n:"Atualidades: fintechs, ESG e cenário econômico"},
-      {t:"bn_seg", n:"Questões FCC: Segurança"},{t:"bn_etica", n:"Ética: Guia de Conduta do Banestes e LGPD"},
+      {rod:[{t:"bn_prog", modo:"erros"},{t:"bn_sim", n:"Correção do simulado de domingo"},{t:"bn_sim", n:"Correção do simulado de domingo"}]},{t:"bn_port", modo:"erros"},
+      {t:"bn_bd", modo:"erros"},{t:"bn_atual"},
+      {t:"bn_prog", modo:"erros"},{t:"bn_etica"},
+      {t:"bn_es", modo:"erros"},{t:"bn_rle", modo:"erros"},
+      {t:"bn_redes", modo:"erros"},{t:"bn_atual"},
+      {t:"bn_seg", modo:"erros"},{t:"bn_etica"},
     ],
     // Semana final · caderno de erros, Guia de Conduta e notícias; sábado 20/02 é descanso
     FF:[
       {t:"bn_sim", n:"Correção do simulado de 14/02"},{t:"bn_rev", n:"Caderno de erros: Específicos"},
-      {t:"bn_rev", n:"Caderno de erros: Específicos"},{t:"bn_etica", n:"Guia de Conduta Ética do Banestes"},
-      {t:"bn_rev", n:"Caderno de erros: Gerais"},{t:"bn_atual", n:"Notícias: Selic/Copom, Pix e Open Finance"},
-      {t:"bn_rev", n:"Caderno de erros: Específicos"},{t:"bn_etica", n:"Guia de Conduta Ética (2ª leitura)"},
-      {t:"bn_rev", n:"Caderno de erros: o que mais errei"},{t:"bn_atual", n:"Notícias recentes do mercado financeiro"},
+      {t:"bn_rev", n:"Caderno de erros: Específicos"},{t:"bn_etica", mi:"guia", n:"Guia de Conduta Ética do Banestes"},
+      {t:"bn_rev", n:"Caderno de erros: Gerais"},{t:"bn_atual", mi:"cenario", n:"Notícias: Selic/Copom, Pix e Open Finance"},
+      {t:"bn_rev", n:"Caderno de erros: Específicos"},{t:"bn_etica", mi:"guia", n:"Guia de Conduta Ética (2ª leitura)"},
+      {t:"bn_rev", n:"Caderno de erros: o que mais errei"},{t:"bn_atual", mi:"cenario", n:"Notícias recentes do mercado financeiro"},
       {folga:true, n:"Descanso: véspera da prova"},{folga:true, n:"Descanso: véspera da prova"},
     ],
   },
@@ -826,12 +1033,19 @@ function aplicarDados(d){
 }
 
 /* ---------- derivados ---------- */
+// Blocos que foram juntados (ex.: Arquitetura dentro de Web) continuam existindo para o histórico; blocoDe() aponta para o bloco atual.
+const blocoDe = id=>TOP[id]?.junto||id;
+const microDe = (b,mid)=>TOP[blocoDe(b)]?.micros?.find(m=>m.id===mid)||null;
 function statsTopico(id){
   let q=0,a=0,m=0,ult=null,n=0;
-  for(const s of S.sessoes) if(s.topico===id){q+=s.questoes||0;a+=s.acertos||0;m+=s.minutos||0;n++;if(!ult||s.data>ult)ult=s.data;}
+  for(const s of S.sessoes) if(blocoDe(s.topico)===id){q+=s.questoes||0;a+=s.acertos||0;m+=s.minutos||0;n++;if(!ult||s.data>ult)ult=s.data;}
   return {q,a,m,ult,n};
 }
-function estadoTopico(id){ const d=S.topicos[id]||{}; const e={status:d.status||0, itens:d.itens||{}, nota:d.nota||""}; if(d.herdado) e.herdado=d.herdado; return e; }
+/* mt = microtópicos concluídos: true (marcado em Assuntos ou herdado) ou a data em que foi marcado como estudado na aba Hoje/na sessão.
+   mtHerdado = os que vieram da trilha antiga; mig = a migração para microtópicos já rodou neste bloco. */
+function estadoTopico(id){ const d=S.topicos[id]||{}; return {...d, status:d.status||0, itens:d.itens||{}, nota:d.nota||"", mt:d.mt||{}}; }
+const errosMicro = (b,mid)=>S.erros.filter(e=>blocoDe(e.topico)===b&&e.micro===mid).length;
+const microsFeitos = b=>{ const mt=estadoTopico(b).mt; return TOP[b].micros.filter(m=>mt[m.id]).length; };
 
 /* Aproveita o progresso da trilha antiga: na 1ª vez que um assunto do Banestes é visto, marca os itens cujo
    equivalente já estava marcado. Fica registrado em "herdado" para não remarcar o que você desmarcar depois.
@@ -844,13 +1058,32 @@ function herdar(){
     const e=estadoTopico(t.id), it={...e.itens}, de={};
     for(const [i,regra] of Object.entries(t.herda))
       if(regra.split("|").some(alt=>alt.split("+").every(refOk)) && !it[i]){ it[i]=true; de[i]=regra; }
-    S.topicos[t.id]={status:e.status, itens:it, nota:e.nota, herdado:de};
+    S.topicos[t.id]={...e, itens:it, herdado:de};
     if(Object.keys(de).length && !e.status) S.topicos[t.id].status=1;
+    mudou=true;
+  }
+  return herdarMicros() || mudou;
+}
+/* Passa as marcações antigas para os microtópicos, uma vez por bloco: se o item antigo cobre o microtópico inteiro, marca.
+   Se cobre só uma parte, não marca; o ↺ "parte já vista" é calculado na hora (refsVistas). Itens e anotações antigas ficam intactos. */
+const regraOk = r=>!!r && r.split("|").some(alt=>alt.split("+").every(refOk));
+const refsDe = m=>[...new Set([...(m.c?m.c.split(/[|+]/):[]), ...m.p])];
+const refsVistas = m=>refsDe(m).filter(refOk);
+const textoRef = r=>{ const [id,k]=r.split(":"); return TOP[id]?.itens?.[k] ?? r; };
+function herdarMicros(){
+  let mudou=false;
+  for(const t of PLANO.topicos){
+    if(!t.micros || S.topicos[t.id]?.mig) continue;
+    const e=estadoTopico(t.id), mt={...e.mt}, de={};
+    for(const m of t.micros) if(!mt[m.id] && regraOk(m.c)){ mt[m.id]=true; de[m.id]=m.c; }
+    S.topicos[t.id]={...e, mt, mtHerdado:{...(e.mtHerdado||{}), ...de}, mig:1};
     mudou=true;
   }
   return mudou;
 }
-const fontesHerda = t=>[...new Set(Object.values(t.herda||{}).flatMap(r=>r.split(/[|+]/).map(x=>x.split(":")[0])))];
+const fontesHerda = t=>[...new Set([
+  ...Object.values(t.herda||{}), ...(t.micros||[]).flatMap(refsDe), ...PLANO.topicos.filter(x=>x.junto===t.id).map(x=>x.id+":0"),
+].flatMap(r=>r.split(/[|+]/).map(x=>x.split(":")[0])))].filter(id=>id!==t.id && TOP[id]);
 function proxRev(e){ const r=e.revisoes||[]; const idx=OFFS.findIndex((_,i)=>!r[i]); if(idx<0) return null; return {idx, data:addDias(e.data,OFFS[idx])}; }
 function errosHoje(){ const h=hoje(); return S.erros.filter(e=>{const p=proxRev(e);return p&&p.data<=h}); }
 
@@ -888,10 +1121,10 @@ const fmtH = x=>x.toFixed(1).replace(".",",").replace(",0","");
 function renderHeader(){
   const h=hoje(), d=parse(h), f=faseDe(h), falta=diasAte(BN.prova,h);
   document.getElementById("sub-hoje").textContent = `${DIASEM[d.getDay()][0].toUpperCase()+DIASEM[d.getDay()].slice(1)}, ${curta(h)} de ${d.getFullYear()} · ${f.n} · ${BN.horasDia} h por dia, seg a sáb`;
-  const As=PLANO.topicos.filter(t=>trDe(t)==="bn"&&t.p==="A"); let tot=0,fe=0; for(const t of As){tot+=t.itens.length; const it=estadoTopico(t.id).itens; fe+=t.itens.filter((_,i)=>it[i]).length;}
+  const As=PLANO.topicos.filter(t=>trDe(t)==="bn"&&t.p==="A"&&t.micros); let tot=0,fe=0; for(const t of As){tot+=t.micros.length; fe+=microsFeitos(t.id);}
   const hrs=horasBanestes();
   document.getElementById("hero-prog").innerHTML = [
-    {l:"Banestes · Prioridade A", v:`${fe} de ${tot} itens`, p:tot?fe/tot:0},
+    {l:"Banestes · Prioridade A", v:`${fe} de ${tot} microtópicos`, p:tot?fe/tot:0},
     {l:"Horas até a prova", v:`${fmtH(hrs)} de ${HORAS_TOTAL} h`, p:Math.min(1,hrs/HORAS_TOTAL)},
   ].map(x=>`<div class="hp"><div class="hp-l"><span>${x.l}</span><span class="num">${x.v}</span></div><div class="hp-bar"><i style="width:${Math.max(x.p>0?2:0,Math.round(x.p*100))}%"></i></div></div>`).join("");
   const cont = falta>1?`Prova em ${falta} dias`:falta===1?"Prova amanhã":falta===0?"Prova hoje":"Prova feita";
@@ -918,25 +1151,60 @@ function slotsSemana(seg){
   for(const s of S.sessoes) if(s.semana===seg && s.slot && (s.ciclo==="bn")===bn) feitos[s.slot]=s;
   const c = bn?cicloDaSemana(seg):null, itens = bn?c.itens:PLANO.ciclo[L];
   const prox = itens.map((_,i)=>i+1).find(i=>!feitos[i] && !itens[i-1].folga) || null;
-  return {bn, L, feitos, prox, itens, fase:c?.fase};
+  const ms = bn?microsDaSemana(seg, itens, feitos, c.fase):[];
+  return {bn, L, feitos, prox, itens, fase:c?.fase, ms};
+}
+/* Fila da Fase 3: percorre os microtópicos com mais erros no caderno. Quem já foi treinado nesta fase vai para o fim da fila,
+   até todos os que têm erro passarem de novo; os sem erro vêm depois, do menos treinado para o mais treinado. */
+function filaErros(b, desde){
+  return TOP[b].micros.map((m,k)=>({m,k,e:errosMicro(b,m.id),s:S.sessoes.filter(s=>blocoDe(s.topico)===b&&s.micro===m.id&&s.data>=desde).length}))
+    .sort((x,y)=>(y.e>0)-(x.e>0)||x.s-y.s||y.e-x.e||x.k-y.k).map(x=>x.m);
+}
+/* Microtópico de cada sessão da semana. tipo: "feito" (sessão registrada), "estudado" (marcado como estudado nesta semana,
+   falta registrar a sessão), "novo" (próximo não concluído), "erros" (fila de erros), "fixo" (definido no ciclo). */
+function microsDaSemana(seg, itens, feitos, fase){
+  const fim=addDias(seg,6), usados={}, U=b=>usados[b]||(usados[b]=new Set());
+  itens.forEach((_,i)=>{ const s=feitos[i+1]; if(s?.micro) U(blocoDe(s.topico)).add(s.micro); });
+  return itens.map((it,i)=>{
+    const s=feitos[i+1];
+    if(s){ const b=blocoDe(s.topico), m=s.micro&&microDe(b,s.micro); return m?{b,m,tipo:"feito"}:null; }
+    if(it.folga || !TOP[it.t]?.micros) return null;
+    const b=it.t, B=TOP[b], mt=estadoTopico(b).mt, u=U(b);
+    if(it.mi){ const m=microDe(b,it.mi); u.add(m.id); return {b,m,tipo:"fixo"}; }
+    let m=null, tipo="erros";
+    if(it.modo!=="erros"){
+      m=B.micros.find(x=>!u.has(x.id) && typeof mt[x.id]==="string" && mt[x.id]>=seg && mt[x.id]<=fim); tipo="estudado";
+      if(!m){ m=B.micros.find(x=>!u.has(x.id) && !mt[x.id]); tipo="novo"; }
+    }
+    if(!m){ const f=filaErros(b, fase?.de||INICIO_BN); m=f.find(x=>!u.has(x.id))||f[0]; tipo="erros"; }
+    u.add(m.id); return {b,m,tipo};
+  });
 }
 const diaDoSlot = (bn,i)=>bn?PLANO.dias[Math.floor(i/2)]:PLANO.dias[i];
-function passosDe(it, fase){
+const nomeSlot = (it,a)=>a ? `${TOP[a.b].curto} → ${a.m.n}` : (it.n || TOP[it.t]?.curto || TOP[it.t]?.nome || "");
+function passosDe(it, fase, a){
   if(!fase) return PLANO.passos;
   if(it?.leve) return BN.passos.leve;
   if(it?.t==="bn_sim") return BN.passos.correcao;
   if(it?.t==="bn_rev") return BN.passos.revisao;
+  if(a?.tipo==="novo"||a?.tipo==="estudado") return BN.passos.teoria;
+  if(a?.tipo==="erros") return BN.passos.questoes;
   return fase.id==="F1"||fase.id==="F2" ? BN.passos.teoria : BN.passos.questoes;
 }
+const btnMarcar = (a,cls,curto)=>{ const ok=!!estadoTopico(a.b).mt[a.m.id];
+  return `<button type="button" class="${cls}" data-marcar="${a.b}:${a.m.id}" aria-pressed="${ok}" aria-label="${ok?"Desmarcar":"Marcar"} ${esc(a.m.n)} como estudado">${ok?"✓ Estudado":curto?"Estudei":"Marcar como estudado"}</button>`; };
 let PASSOS_ATUAIS = PLANO.passos;
 function renderCiclo(){
-  const h=hoje(), seg=segunda(h), {bn,L,feitos,prox,itens,fase}=slotsSemana(seg), f=faseDe(h);
+  const h=hoje(), seg=segunda(h), {bn,L,feitos,prox,itens,fase,ms}=slotsSemana(seg), f=faseDe(h);
   document.getElementById("cycle-title").textContent = bn ? `Ciclo da ${fase.n} · ${curta(seg)} a ${curta(addDias(seg,6))}` : `Semana ${L} · ${curta(seg)} a ${curta(addDias(seg,6))}`;
   const cy=document.getElementById("cycle"); cy.classList.toggle("dupla",bn);
   cy.innerHTML = itens.map((it,i)=>{
-    const n=i+1, fe=feitos[n];
+    const n=i+1, fe=feitos[n], a=ms[i];
     if(it.folga) return `<div class="slot folga"><span class="sn">–</span><span class="sd">${diaDoSlot(bn,i)}</span><span class="st"></span><span class="t">${esc(it.n)}</span></div>`;
-    return `<div class="slot ${fe?"done":""} ${n===prox?"next":""} ${it.leve?"leve":""}"><span class="sn">${fe?"✓":n}</span><span class="sd">${diaDoSlot(bn,i)}</span><span class="st">${fe?"feita":n===prox?"próxima":""}</span><span class="t">${esc(it.n)}</span></div>`;
+    const st = fe?"feita":a?.tipo==="estudado"?"estudado":n===prox?"próxima":a?.tipo==="erros"?"erros":"";
+    const nome = fe&&!a ? (TOP[fe.topico]?.curto||TOP[fe.topico]?.nome||it.n||"") : nomeSlot(it,a);
+    const btn = !fe && (a?.tipo==="novo"||a?.tipo==="estudado") ? `<span class="sb">${btnMarcar(a,"slot-btn",true)}</span>` : "";
+    return `<div class="slot ${fe?"done":""} ${n===prox?"next":""} ${it.leve?"leve":""} ${a?.tipo==="estudado"&&!fe?"estudado":""}" title="${esc(nome)}"><span class="sn">${fe?"✓":n}</span><span class="sd">${diaDoSlot(bn,i)}</span><span class="st">${st}</span><span class="t">${esc(nome)}</span>${btn}</div>`;
   }).join("");
   document.getElementById("cycle-nota")?.remove();
   if(bn) cy.insertAdjacentHTML("afterend", `<div id="cycle-nota"><div class="lembrete cycle-note"><b>${esc(fase.n)}:</b> ${esc(fase.t)}</div></div>`);
@@ -947,13 +1215,20 @@ function renderCiclo(){
     nc.innerHTML = `<div class="eyebrow">Ciclo completo</div><div class="titulo">Semana fechada. ${dom}</div><p class="muted">As ${ativas} sessões da semana estão registradas.</p>`;
     PASSOS_ATUAIS = PLANO.passos;
   } else {
-    const it=itens[prox-1];
-    PASSOS_ATUAIS = passosDe(bn?it:null, fase);
+    const it=itens[prox-1], a=bn?ms[prox-1]:null;
+    PASSOS_ATUAIS = passosDe(bn?it:null, fase, a);
     const tp=TOP[it.t];
-    nc.innerHTML = `<div class="eyebrow">Próxima sessão · ${prox} de ${itens.length}${it.leve?" · feriado":""}</div>
-      <div class="titulo">${esc(it.n)}</div>
-      <div class="muted" style="font-size:.9rem">${esc(tp.nome)} · ${rotTrilha(tp)}${tp.oculto?"":`, prioridade ${tp.p}`}</div>
-      <ol class="steps" id="steps">${PASSOS_ATUAIS.map((p,i)=>`<li data-i="${i}"><span class="mono">${p.de}–${p.ate} min</span><span>${esc(p.t)}</span></li>`).join("")}</ol>
+    const TIPO={novo:"microtópico novo", estudado:"já estudado · falta registrar a sessão", erros:"questões: microtópico com mais erros no caderno", fixo:"leitura"};
+    let micro="";
+    if(a){
+      const k=TOP[a.b].micros.indexOf(a.m)+1, Y=TOP[a.b].micros.length, ne=errosMicro(a.b,a.m.id);
+      micro = `<div class="muted" style="font-size:.9rem">${esc(TOP[a.b].nome)} · microtópico ${k} de ${Y} · ${microsFeitos(a.b)} de ${Y} concluídos${ne?` · <span class="acc-r">${ne} ${ne===1?"erro anotado":"erros anotados"}</span>`:""}</div>
+        ${a.tipo==="novo"||a.tipo==="estudado"?`<div style="margin-top:10px">${btnMarcar(a,"btn small")}</div>`:""}`;
+    }
+    nc.innerHTML = `<div class="eyebrow">Próxima sessão · ${prox} de ${itens.length}${it.leve?" · feriado":""}${a?` · ${TIPO[a.tipo]}`:""}</div>
+      <div class="titulo">${a?`<span class="bloco">${esc(TOP[a.b].curto)} →</span> ${esc(a.m.n)}`:esc(it.n||tp.nome)}</div>
+      ${a?micro:`<div class="muted" style="font-size:.9rem">${esc(tp.nome)} · ${rotTrilha(tp)}${tp.oculto?"":`, prioridade ${tp.p}`}</div>`}
+      <ol class="steps" id="steps">${PASSOS_ATUAIS.map((p,i)=>`<li data-i="${i}"><span class="mono">${p.de}–${p.ate} min</span><span>${esc(a?p.t.replace("[tópico do edital]",a.m.n).replace("do mesmo tópico","deste microtópico").replace("do tópico (","deste microtópico ("):p.t)}</span></li>`).join("")}</ol>
       <div class="timer"><span class="clock" id="clock">${pad(SESSAO_MIN)}:00</span>
         <button class="btn primary small" type="button" id="t-go">Iniciar</button>
         <button class="btn small" type="button" id="t-reset">Zerar</button>
@@ -965,22 +1240,55 @@ function renderCiclo(){
   const sel=document.getElementById("s-slot");
   if(!sel.dataset.touched){ sel.value = prox?String(prox):"0"; syncTopicoDoSlot(); }
 }
-function itensDoForm(){ const seg=segunda(document.getElementById("s-data").value||hoje()); return slotsSemana(seg).itens; }
+const semanaDoForm = ()=>slotsSemana(segunda(document.getElementById("s-data").value||hoje()));
+const itensDoForm = ()=>semanaDoForm().itens;
+/* Select de microtópico (sessão e erro): lista os microtópicos do bloco escolhido. */
+function opcoesMicro(selId, topico, escolhido){
+  const s=document.getElementById(selId), B=TOP[blocoDe(topico)], ms=B?.micros||[], mt=B?estadoTopico(B.id).mt:{};
+  s.innerHTML = `<option value="">${ms.length?"Sem microtópico":"Este assunto não tem microtópicos"}</option>`+ms.map((m,k)=>`<option value="${m.id}">${k+1}. ${esc(m.n)}${mt[m.id]?" ✓":""}</option>`).join("");
+  s.disabled=!ms.length;
+  s.value = escolhido && ms.some(m=>m.id===escolhido) ? escolhido : "";
+  if(selId==="s-micro") syncMarcar();
+}
+function syncMarcar(){
+  const b=blocoDe(document.getElementById("s-topico").value), mid=document.getElementById("s-micro").value;
+  const box=document.getElementById("s-marcar-box"), ja=!!(mid && estadoTopico(b).mt[mid]);
+  box.hidden = !mid || ja;
+}
+function microSugerido(topico){
+  const b=blocoDe(topico), B=TOP[b]; if(!B?.micros) return "";
+  const w=slotsSemana(segunda(hoje()));
+  const a=w.prox?w.ms[w.prox-1]:null; if(a && a.b===b) return a.m.id;
+  const ult=S.sessoes.filter(s=>blocoDe(s.topico)===b&&s.micro).sort((x,y)=>y.data.localeCompare(x.data)||(y.criado||0)-(x.criado||0))[0];
+  if(ult) return ult.micro;
+  return (B.micros.find(m=>!estadoTopico(b).mt[m.id])||{}).id||"";
+}
 function renderFormSessao(){
   const sel=document.getElementById("s-slot");
-  const cur=sel.value;
-  sel.innerHTML = itensDoForm().map((it,i)=>it.folga?"":`<option value="${i+1}">${i+1} · ${esc(it.n)}</option>`).join("")+`<option value="0">Sessão avulsa (fora do ciclo)</option>`;
+  const cur=sel.value, w=semanaDoForm();
+  sel.innerHTML = w.itens.map((it,i)=>it.folga?"":`<option value="${i+1}">${i+1} · ${esc(nomeSlot(it,w.ms[i]))}</option>`).join("")+`<option value="0">Sessão avulsa (fora do ciclo)</option>`;
   if(cur && sel.querySelector(`option[value="${cur}"]`)) sel.value=cur;
   const opts = Object.keys(PLANO.trilhas).map(tr=>Object.keys(prioDe(tr)).map(p=>{
     const ts=PLANO.topicos.filter(t=>trDe(t)===tr&&t.p===p); if(!ts.length) return "";
     return `<optgroup label="${esc(PLANO.trilhas[tr].nome)} · ${p}">${ts.map(t=>`<option value="${t.id}">${esc(t.nome)}</option>`).join("")}</optgroup>`;
-  }).join("")).join("") + `<optgroup label="Banestes · revisão e simulados">${PLANO.topicos.filter(t=>t.oculto).map(t=>`<option value="${t.id}">${esc(t.nome)}</option>`).join("")}</optgroup>`;
+  }).join("")).join("") + `<optgroup label="Banestes · revisão e simulados">${PLANO.topicos.filter(t=>t.oculto&&!t.junto&&!t.nota).map(t=>`<option value="${t.id}">${esc(t.nome)}</option>`).join("")}</optgroup>`;
   for(const id of ["s-topico","e-topico"]){ const s=document.getElementById(id); const v=s.value; s.innerHTML=opts; if(v) s.value=v; }
+  // erro: começa no bloco da próxima sessão, até você mudar
+  const et=document.getElementById("e-topico");
+  if(!et.dataset.touched){ const w2=slotsSemana(segunda(hoje())), it=w2.prox?w2.itens[w2.prox-1]:null; if(it&&!it.folga&&TOP[it.t]) et.value=it.t; }
+  const em=document.getElementById("e-micro");
+  opcoesMicro("e-micro", et.value, em.dataset.touched?em.value:microSugerido(et.value));
+  const sm=document.getElementById("s-micro"); opcoesMicro("s-micro", document.getElementById("s-topico").value, sm.value);
 }
 function syncTopicoDoSlot(){
   const n=Number(document.getElementById("s-slot").value);
   if(!n) return;
-  const it=itensDoForm()[n-1]; if(it && !it.folga) document.getElementById("s-topico").value = it.t;
+  const w=semanaDoForm(), it=w.itens[n-1], a=w.ms[n-1];
+  if(it && !it.folga){
+    const sf=w.feitos[n];
+    document.getElementById("s-topico").value = a?a.b:it.t;
+    opcoesMicro("s-micro", a?a.b:it.t, a?.m.id || sf?.micro || "");
+  }
 }
 
 /* ---------- timer da sessão ---------- */
@@ -1010,7 +1318,7 @@ function htmlErro(e, compacto){
   const revs = OFFS.map((o,i)=>{const d=addDias(e.data,o), ok=(e.revisoes||[])[i]; const late=!ok&&d<h; return `<span class="rev ${ok?"ok":late?"late":""}">D+${o} · ${curta(d)}${ok?" ✓":""}</span>`}).join("");
   return `<div class="err ${due?"due":""}">
     <div style="min-width:0">
-      <div class="eyebrow">${esc(TOP[e.topico]?.nome||"Assunto")} · anotado em ${curta(e.data)}</div>
+      <div class="eyebrow">${esc(TOP[blocoDe(e.topico)]?.curto||TOP[e.topico]?.nome||"Assunto")}${microDe(e.topico,e.micro)?` → ${esc(microDe(e.topico,e.micro).n.split(":")[0])}`:""} · anotado em ${curta(e.data)}</div>
       <div class="q">${esc(e.texto)}</div>
       ${e.regra?`<div class="regra">${esc(e.regra)}</div>`:""}
       <div class="revs">${revs}</div>
@@ -1042,15 +1350,73 @@ function renderAssuntos(){
   document.getElementById("f-trilha").innerHTML = Object.entries(PLANO.trilhas).map(([k,v])=>`<button type="button" data-tr="${k}" aria-pressed="${k===tr}">${esc(v.nome)}</button>`).join("");
   document.getElementById("f-prio").innerHTML = ["todas",...Object.keys(PR)].map(p=>`<button type="button" data-p="${p}" aria-pressed="${p===S.prio}">${p==="todas"?"Todas":"Prioridade "+p}</button>`).join("");
   document.getElementById("trilha-info").innerHTML = tr==="bn" ? `<div class="lembrete" style="margin-bottom:10px">${esc(BN.lembrete)}</div>
-    <div class="aviso"><b>Questões por bloco são estimativas.</b> O edital só fixa 50 questões de Conhecimentos Específicos, sem dividir por assunto. As faixas (≈) vêm das provas recentes de Analista de TI da FCC (TRT-1, TRT-6 e TRT-15 de 2025; TRT-20 de 2024), em que Programação e Redes lideraram, seguidas de Segurança e Banco de Dados. Os itens são o texto do Anexo IV, cargo 04. Itens com <span class="herd">↺</span> vieram marcados da trilha antiga.</div>`
+    <div class="aviso"><b>Cada bloco virou uma lista de microtópicos.</b> 1 microtópico = 1 sessão de 60 min (≈18 min de teoria, 36 de questões FCC e 6 de caderno de erros), na ordem de prioridade. O texto original do Anexo IV, cargo 04, fica em “Texto do edital”, dentro de cada bloco. <span class="herd">↺ trilha antiga</span> = marcado a partir do que você já tinha estudado; <span class="parc-tag">↺ parte já vista</span> = o item antigo cobria só uma parte, por isso o microtópico ficou desmarcado. <b>Questões por bloco são estimativas</b> (provas de Analista de TI da FCC de 2024 e 2025); o edital só fixa as 50 de Específicos.</div>`
     : `<div class="aviso">Trilha antiga (BB, Caixa e outros). Fica guardada para depois do Banestes, com tudo o que você já marcou.</div>`;
   const ps = S.prio==="todas"?Object.keys(PR):[S.prio];
   box.innerHTML = ps.map(p=>{
     const ts=PLANO.topicos.filter(t=>trDe(t)===tr&&t.p===p);
     const dom=ts.filter(t=>estadoTopico(t.id).status===3).length;
-    return `<div class="prio-head"><span class="prio-letter">${p}</span><h2>${PR[p].titulo}</h2><span class="muted" style="font-size:.85rem">${PR[p].quando} · ${dom} de ${ts.length} dominados</span></div>
-    <div class="topics">${ts.map(htmlTopico).join("")}</div>`;
+    const ms=ts.filter(t=>t.micros), Y=ms.reduce((a,t)=>a+t.micros.length,0), X=ms.reduce((a,t)=>a+microsFeitos(t.id),0);
+    return `<div class="prio-head"><span class="prio-letter">${p}</span><h2>${PR[p].titulo}</h2><span class="muted" style="font-size:.85rem">${PR[p].quando} · ${Y?`${X} de ${Y} microtópicos`:`${dom} de ${ts.length} dominados`}</span></div>
+    <div class="topics">${ts.map(t=>t.micros?htmlBloco(t):htmlTopico(t)).join("")}</div>
+    ${tr==="bn"&&p==="C"?`<div class="lembrete" style="margin-top:10px"><b>Inglês técnico:</b> ${esc(NOTA_INGLES)}</div>`:""}`;
   }).join("");
+}
+/* Bloco do Banestes: microtópicos marcáveis, ↺ do que veio da trilha antiga e o texto do edital recolhível. */
+function htmlBloco(t){
+  const e=estadoTopico(t.id), st=statsTopico(t.id), aberto=S.abertos.has(t.id), her=e.mtHerdado||{};
+  const Y=t.micros.length, X=microsFeitos(t.id), p=pct(st.a,st.q), prox=t.micros.find(m=>!e.mt[m.id]);
+  const nErros=S.erros.filter(x=>blocoDe(x.topico)===t.id).length;
+  const fontes=aberto?fontesHerda(t):[];
+  const notasAntigas = fontes.map(id=>({id,n:estadoTopico(id).nota})).filter(x=>x.n.trim());
+  const comNota = new Set(notasAntigas.map(x=>x.id));
+  const refsTitulo = r=>r.split(/[|+]/).map(textoRef).join(" / ");
+  const microsHtml = t.micros.map((m,k)=>{
+    const feito=!!e.mt[m.id], vistas=feito?[]:refsVistas(m), ne=errosMicro(t.id,m.id);
+    const notasRef=[...new Set(vistas.map(r=>r.split(":")[0]).filter(id=>comNota.has(id)))];
+    return `<li><label><input type="checkbox" id="mt-${t.id}-${m.id}" data-mt="${t.id}:${m.id}" ${feito?"checked":""}><span class="mk">${k+1}</span><span class="mn">${esc(m.n)}
+      ${feito&&her[m.id]?`<span class="herd" title="Marcado a partir de: ${esc(refsTitulo(her[m.id]))}">↺ trilha antiga</span>`:""}
+      ${feito&&typeof e.mt[m.id]==="string"?`<span class="mdata">estudado em ${curta(e.mt[m.id])}</span>`:""}
+      ${ne?`<span class="merr">${ne} ${ne===1?"erro":"erros"}</span>`:""}
+      ${vistas.length?`<span class="parc">↺ parte já vista: ${esc(vistas.map(textoRef).join(" · "))}${notasRef.length?` · anotação antiga em ${esc(notasRef.map(id=>`“${TOP[id].nome}”`).join(", "))} (abaixo)`:""}</span>`:""}
+    </span></label></li>`;
+  }).join("");
+  const edital = (t.edital||[t.id]).map(src=>{ const T=TOP[src], it=estadoTopico(src).itens;
+    return `${(t.edital||[]).length>1?`<h4>${esc(T.nome)}</h4>`:""}<ul>${T.itens.map((x,i)=>`<li class="${it[i]?"ok":""}">${esc(x)}${it[i]?` <span class="muted">· marcado na lista antiga</span>`:""}</li>`).join("")}</ul>`; }).join("");
+  return `<div class="topic ${aberto?"open":""}" data-t="${t.id}">
+    <div class="topic-row">
+      <div style="min-width:0">
+        <button class="topic-name" type="button" data-toggle="${t.id}" aria-expanded="${aberto}"><span class="car">›</span><span>${esc(t.nome)}</span></button>
+        <div class="topic-meta">
+          ${t.est?`<span class="est" title="Estimativa, não está no edital">≈ ${esc(t.est.replace("~",""))} questões (estimativa)</span>`:""}
+          ${t.qtd?`<span class="est ed">${esc(t.qtd)}</span>`:""}
+          <span><span class="bar"><i style="width:${Math.round(100*X/Y)}%"></i></span> <span class="num">${X} de ${Y}</span> microtópicos</span>
+          <span class="num">${st.q} questões</span>
+          ${p!=null?`<span class="num ${accCls(p)}">${p}% acerto</span>`:""}
+          ${nErros?`<span class="num">${nErros} no caderno</span>`:""}
+          ${st.ult?`<span>último estudo ${curta(st.ult)}</span>`:""}
+        </div>
+        ${prox?`<div class="prox-micro">Próximo: <b>${t.micros.indexOf(prox)+1}. ${esc(prox.n)}</b></div>`:`<div class="prox-micro acc-g">Todos os microtópicos concluídos</div>`}
+      </div>
+      <div class="bubbles" role="group" aria-label="Status de ${esc(t.nome)}">${STATUS.map((s,i)=>`<button type="button" class="bub s${i}" data-st="${t.id}:${i}" aria-pressed="${e.status===i}" title="${s.n}">${s.k}</button>`).join("")}</div>
+    </div>
+    ${aberto?`<div class="topic-body">
+      <p class="onde">${esc(t.onde)}</p>
+      <div style="min-width:0">
+        <ol class="micros">${microsHtml}</ol>
+        <details class="edital"><summary>Texto do edital (Anexo IV)</summary>${edital}</details>
+      </div>
+      <div>
+        <div class="minis">
+          <div class="mini"><div class="v">${st.n}</div><div class="l">sessões</div></div>
+          <div class="mini"><div class="v">${(st.m/60).toFixed(1).replace(".",",")} h</div><div class="l">estudadas</div></div>
+          <div class="mini"><div class="v ${accCls(p)}">${p!=null?p+"%":"—"}</div><div class="l">acerto</div></div>
+        </div>
+        <label class="f">Anotações<textarea id="nota-${t.id}" data-nota="${t.id}" placeholder="Pegadinhas, links de aula, o que falta revisar">${esc(e.nota)}</textarea></label>
+        ${notasAntigas.map(x=>`<div class="nota-antiga"><b>Anotação em “${esc(TOP[x.id].nome)}”${TOP[x.id].junto?" (bloco antigo, agora dentro deste)":" (trilha antiga)"}:</b>\n${esc(x.n)}</div>`).join("")}
+      </div>
+    </div>`:""}
+  </div>`;
 }
 function htmlTopico(t){
   const e=estadoTopico(t.id), st=statsTopico(t.id), aberto=S.abertos.has(t.id), herd=e.herdado||{};
@@ -1087,9 +1453,7 @@ function htmlTopico(t){
   </div>`;
 }
 function salvarTopico(id, patch){
-  const atual=estadoTopico(id);
-  const novo={status:atual.status, itens:{...atual.itens}, nota:atual.nota, ...patch};
-  if(atual.herdado) novo.herdado=atual.herdado;
+  const novo={...estadoTopico(id), ...patch}; // mantém itens antigos, herdado, mt, mtHerdado e mig
   S.topicos[id]=novo; gravar("topicos/"+id, novo);
 }
 
@@ -1099,7 +1463,7 @@ function renderHistorico(){
   const ts=document.getElementById("t-sessoes");
   ts.innerHTML = ss.length ? ss.map(s=>{const p=pct(s.acertos,s.questoes);const L=letraSemana(s.semana);
     return `<div class="h-row"><div class="h-date"><b>${parse(s.data).getDate()}</b><span>${MESES[parse(s.data).getMonth()]}</span></div>
-      <div class="h-main"><div class="h-t">${esc(TOP[s.topico]?.nome||s.topico)}</div><div class="h-m"><span class="chip">${!s.slot?"avulsa":s.ciclo==="bn"?`sessão ${s.slot}`:`${L}${s.slot}`}</span><span class="num">${s.minutos||0} min</span><span class="num">${s.questoes||0} questões</span>${p!=null?`<span class="num ${accCls(p)}">${p}%</span>`:""}</div></div>
+      <div class="h-main"><div class="h-t">${esc(TOP[s.topico]?.nome||s.topico)}</div>${microDe(s.topico,s.micro)?`<div class="h-micro">${esc(microDe(s.topico,s.micro).n)}</div>`:""}<div class="h-m"><span class="chip">${!s.slot?"avulsa":s.ciclo==="bn"?`sessão ${s.slot}`:`${L}${s.slot}`}</span><span class="num">${s.minutos||0} min</span><span class="num">${s.questoes||0} questões</span>${p!=null?`<span class="num ${accCls(p)}">${p}%</span>`:""}</div></div>
       <button class="btn ghost small" type="button" data-del-sessao="${s.id}">Apagar</button></div>`}).join("")
     : `<div class="empty">Nenhuma sessão registrada. Use o formulário da aba Hoje no fim de cada sessão.</div>`;
   const sem={};
@@ -1198,13 +1562,21 @@ function toast(id,msg){ const el=document.getElementById(id); el.textContent=msg
 
 document.getElementById("s-slot").addEventListener("change",e=>{e.target.dataset.touched="1"; syncTopicoDoSlot();});
 document.getElementById("s-data").addEventListener("change",()=>{renderFormSessao(); syncTopicoDoSlot();});
+document.getElementById("s-topico").addEventListener("change",e=>{ const b=blocoDe(e.target.value), B=TOP[b]; opcoesMicro("s-micro", b, B?.micros ? microSugerido(b) : ""); });
+document.getElementById("s-micro").addEventListener("change",syncMarcar);
+document.getElementById("e-topico").addEventListener("change",e=>{ e.target.dataset.touched="1"; delete document.getElementById("e-micro").dataset.touched; opcoesMicro("e-micro", e.target.value, microSugerido(e.target.value)); });
+document.getElementById("e-micro").addEventListener("change",e=>{ e.target.dataset.touched="1"; });
+function marcarMicro(b, mid, valor){ const mt={...estadoTopico(b).mt}; if(valor) mt[mid]=valor; else delete mt[mid]; salvarTopico(b,{mt, ...(estadoTopico(b).status===0&&valor?{status:1}:{})}); }
 document.getElementById("f-sessao").addEventListener("submit",e=>{
   e.preventDefault();
   const data=document.getElementById("s-data").value||hoje();
   const q=Math.max(0,parseInt(document.getElementById("s-q").value)||0);
   const a=Math.min(q,Math.max(0,parseInt(document.getElementById("s-a").value)||0));
-  const s={id:novoId(), data, semana:segunda(data), slot:Number(document.getElementById("s-slot").value)||0, topico:document.getElementById("s-topico").value, ...(cicloBn(segunda(data))?{ciclo:"bn"}:{}), minutos:Math.max(0,parseInt(document.getElementById("s-min").value)||0), questoes:q, acertos:a, criado:Date.now()};
+  const micro=document.getElementById("s-micro").value;
+  const s={id:novoId(), data, semana:segunda(data), slot:Number(document.getElementById("s-slot").value)||0, topico:document.getElementById("s-topico").value, ...(micro?{micro}:{}), ...(cicloBn(segunda(data))?{ciclo:"bn"}:{}), minutos:Math.max(0,parseInt(document.getElementById("s-min").value)||0), questoes:q, acertos:a, criado:Date.now()};
   S.sessoes.push(s); const {id,...body}=s; gravar("sessoes/"+id, body);
+  const b=blocoDe(s.topico);
+  if(micro && document.getElementById("s-marcar").checked && !document.getElementById("s-marcar-box").hidden) marcarMicro(b, micro, data);
   if(estadoTopico(s.topico).status===0) salvarTopico(s.topico,{status:1});
   document.getElementById("s-q").value=""; document.getElementById("s-a").value="";
   delete document.getElementById("s-slot").dataset.touched;
@@ -1214,14 +1586,16 @@ document.getElementById("f-sessao").addEventListener("submit",e=>{
 document.getElementById("f-erro").addEventListener("submit",e=>{
   e.preventDefault();
   const texto=document.getElementById("e-q").value.trim(); if(!texto) return;
-  const er={id:novoId(), data:document.getElementById("e-data").value||hoje(), topico:document.getElementById("e-topico").value, texto, regra:document.getElementById("e-r").value.trim(), revisoes:[false,false,false], criado:Date.now()};
+  const micro=document.getElementById("e-micro").value;
+  const er={id:novoId(), data:document.getElementById("e-data").value||hoje(), topico:document.getElementById("e-topico").value, ...(micro?{micro}:{}), texto, regra:document.getElementById("e-r").value.trim(), revisoes:[false,false,false], criado:Date.now()};
   S.erros.push(er); const {id,...body}=er; gravar("erros/"+id, body);
   document.getElementById("e-q").value=""; document.getElementById("e-r").value="";
-  renderErros(); renderTiles(); toast("e-toast",`Erro anotado. Primeira revisão em ${curta(addDias(er.data,1))}.`);
+  renderErros(); renderTiles(); renderAssuntos(); toast("e-toast",`Erro anotado. Primeira revisão em ${curta(addDias(er.data,1))}.`);
 });
 document.addEventListener("click",e=>{
-  const t=e.target.closest("[data-toggle],[data-st],[data-rev],[data-del-erro],[data-del-sessao],#f-trilha button,#f-prio button,#f-erros button");
+  const t=e.target.closest("[data-toggle],[data-st],[data-rev],[data-del-erro],[data-del-sessao],[data-marcar],#f-trilha button,#f-prio button,#f-erros button");
   if(!t) return;
+  if(t.dataset.marcar){ const [b,mid]=t.dataset.marcar.split(":"); marcarMicro(b, mid, estadoTopico(b).mt[mid]?null:hoje()); renderAll(); return; }
   if(t.dataset.toggle){ const id=t.dataset.toggle; S.abertos.has(id)?S.abertos.delete(id):S.abertos.add(id); renderAssuntos(); return; }
   if(t.dataset.st){ const [id,v]=t.dataset.st.split(":"); salvarTopico(id,{status:Number(v)}); renderAssuntos(); return; }
   if(t.dataset.rev){ const er=S.erros.find(x=>x.id===t.dataset.rev); const p=er&&proxRev(er); if(!p) return; const r=[...(er.revisoes||[false,false,false])]; r[p.idx]=true; er.revisoes=r; const {id,...body}=er; gravar("erros/"+id, body); renderErros(); renderTiles(); return; }
@@ -1234,6 +1608,7 @@ document.addEventListener("click",e=>{
 document.addEventListener("change",e=>{
   const t=e.target;
   if(t.dataset.ck){ const [id,i]=t.dataset.ck.split(":"); const it={...estadoTopico(id).itens}; if(t.checked) it[i]=true; else delete it[i]; salvarTopico(id,{itens:it}); renderAssuntos(); }
+  else if(t.dataset.mt){ const [b,mid]=t.dataset.mt.split(":"); marcarMicro(b, mid, t.checked?true:null); renderAll(); }
   else if(t.dataset.sim){ const d={...(S.simulados[t.dataset.sim]||{}), feito:t.checked}; S.simulados[t.dataset.sim]=d; gravar("simulados/"+t.dataset.sim,d); }
   else if(t.dataset.simr){ const d={...(S.simulados[t.dataset.simr]||{}), resultado:t.value.trim()}; S.simulados[t.dataset.simr]=d; gravar("simulados/"+t.dataset.simr,d); }
 });
