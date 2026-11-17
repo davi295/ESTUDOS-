@@ -430,7 +430,7 @@ details.edital li.ok{color:var(--ink)}
     <div class="panel">
       <div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap">
         <h2 id="cycle-title">Ciclo da semana</h2>
-        <span class="muted" style="font-size:.85rem">Perdeu um dia? Faça a sessão que faltou, sem acumular.</span>
+        <span class="muted" style="font-size:.85rem">Faça na ordem e no dia que quiser. O que não der não acumula.</span>
       </div>
       <div class="cycle" id="cycle"></div>
     </div>
@@ -1111,16 +1111,79 @@ function cicloDaSemana(seg){
   }
   return {fase:f, itens};
 }
-// Horas planejadas por assunto, dia a dia, de 17/11 a 19/02 (só seg a sáb; os simulados de domingo ficam fora)
-const PLANEJADO = (()=>{ const h={}; for(let d=BN.fases[0].de; d<"2027-02-20"; d=addDias(d,1)){ const w=(parse(d).getDay()+6)%7; if(w===6) continue;
-  const its=cicloDaSemana(segunda(d)).itens; for(const it of [its[2*w],its[2*w+1]]) if(!it.folga) h[it.t]=(h[it.t]||0)+SESSAO_MIN/60; } return h; })();
+// Horas planejadas por assunto, dia a dia, de 17/11 até a véspera de `ate` (só seg a sáb; os simulados de domingo ficam fora)
+function planejadoAte(ate){ const h={}; for(let d=BN.fases[0].de; d<ate && d<"2027-02-20"; d=addDias(d,1)){ const w=(parse(d).getDay()+6)%7; if(w===6) continue;
+  const its=cicloDaSemana(segunda(d)).itens; for(const it of [its[2*w],its[2*w+1]]) if(!it.folga) h[it.t]=(h[it.t]||0)+SESSAO_MIN/60; } return h; }
+const PLANEJADO = planejadoAte("2027-02-20");
 const HORAS_TOTAL = Object.values(PLANEJADO).reduce((a,b)=>a+b,0);
 const fmtH = x=>x.toFixed(1).replace(".",",").replace(",0","");
+/* Saldo do plano: horas feitas desde 16/11 menos as planejadas até ontem (hoje ainda está em aberto), no total e por bloco.
+   O plano é conselho: dias com mais e dias com menos estudo se compensam; o saldo só mostra para que lado você está. */
+const somaH = o=>Object.values(o).reduce((a,b)=>a+b,0);
+function feitoPorBloco(){ const h={}; for(const s of S.sessoes) if(s.data>=INICIO_BN && s.data<BN.prova){ const b=blocoDe(s.topico); h[b]=(h[b]||0)+(s.minutos||0)/60; } return h; }
+function saldo(){
+  const h=hoje(), pl=planejadoAte(h), fe=feitoPorBloco(), d=b=>(fe[b]||0)-(pl[b]||0);
+  // hoje conta só até o que você já fez: as 2 h de hoje não deixam você "à frente", e ainda não estudar hoje não é atraso
+  const plHoje=somaH(planejadoAte(addDias(h,1)))-somaH(pl), feHoje=S.sessoes.reduce((a,s)=>a+(s.data===h?(s.minutos||0)/60:0),0);
+  const blocos=Object.keys(pl).filter(b=>TOP[b]?.micros).map(b=>({b, d:d(b)})).sort((x,y)=>x.d-y.d);
+  return {total:somaH(fe)-somaH(pl)-Math.min(plHoje,feHoje), atrasados:blocos.filter(x=>x.d<=-1), d};
+}
+const fmtSaldo = t=>(t>=0.05?"+":t<=-0.05?"−":"")+fmtH(Math.abs(t));
+function conselhoSaldo(sd){
+  const t=sd.total, nomes=xs=>xs.slice(0,2).map(x=>`${esc(TOP[x.b].curto)} (−${fmtH(-x.d)} h)`).join(" e ");
+  if(t>=1) return `<b>${fmtH(t)} h à frente do plano.</b> ${t>=2?"Pode tirar um dia mais leve sem culpa":"Pode pular uma sessão quando precisar, sem culpa"}${sd.atrasados.length?`, ou adiantar ${nomes(sd.atrasados)}`:""}.`;
+  if(t>-1) return `<b>Em dia com o plano.</b> Distribua as sessões como preferir: a meta é a semana, não o dia.`;
+  if(t>-6) return `<b>${fmtH(-t)} h atrás do plano.</b> Recupere aos poucos, com 1 sessão a mais em 2 ou 3 dias ou um pouco no domingo${sd.atrasados.length?`. Comece por ${nomes(sd.atrasados)}`:""}.`;
+  const A=sd.atrasados.filter(x=>TOP[x.b].p==="A");
+  return `<b>${fmtH(-t)} h atrás do plano.</b> Não tente pagar tudo de uma vez, o saldo não precisa zerar. Deixe de lado primeiro a prioridade C (SO, Atualidades, Ética e Inglês) e as leituras rápidas, e proteja os blocos A${A.length?`, a começar por ${nomes(A)}`:""}. Nos dias em que der mais de 2 h, cada sessão a mais desconta do saldo.`;
+}
+/* Semana fechada: sempre há uma sessão extra para fazer, que conta a favor no saldo. Dois jeitos:
+   "adiantar" segue a ordem do ciclo da semana seguinte (a 1ª extra puxa a sessão 1 de lá, a 2ª a sessão 2...);
+   "antigo" faz questões do microtópico já estudado que você não vê há mais tempo. */
+function extraAdiantar(seg){
+  const n=S.sessoes.filter(s=>s.semana===seg && !s.slot && s.ciclo==="bn").length;
+  const prox=addDias(seg,7), c=cicloDaSemana(prox), ms=microsDaSemana(prox, c.itens, {}, c.fase);
+  const xs=c.itens.map((it,i)=>({it, a:ms[i]})).filter(x=>x.a && !x.it.folga);
+  return xs.length ? xs[n % xs.length] : null;
+}
+// microtópico estudado há pelo menos 7 dias, do mais esquecido para o mais recente; empate: o com mais erros no caderno
+function extraAntigo(){
+  const h=hoje(), lim=addDias(h,-7), ult={};
+  for(const s of S.sessoes) if(s.micro){ const k=blocoDe(s.topico)+":"+s.micro; if(!ult[k]||s.data>ult[k]) ult[k]=s.data; }
+  const cs=[];
+  for(const t of PLANO.topicos) if(trDe(t)==="bn" && t.micros && !t.junto && !t.oculto){
+    const mt=estadoTopico(t.id).mt;
+    for(const m of t.micros) if(mt[m.id]){
+      const d=[ult[t.id+":"+m.id]||"", typeof mt[m.id]==="string"?mt[m.id]:""].sort().at(-1); // "" = herdado da trilha antiga, sem data
+      if(d<=lim) cs.push({b:t.id, m, d, e:errosMicro(t.id,m.id)});
+    }
+  }
+  cs.sort((x,y)=>x.d.localeCompare(y.d) || y.e-x.e);
+  const c=cs[0];
+  return c ? {it:{t:c.b}, a:{b:c.b, m:c.m, tipo:"antigo", dias:c.d?diasAte(h,c.d):null}} : null;
+}
+function sugestaoExtra(seg, fase){
+  if(!fase || !["F1","F2","F3"].includes(fase.id)) return null;
+  const ad=extraAdiantar(seg), an=extraAntigo();
+  // sem escolha sua: atrasado → adianta matéria; em dia ou à frente → questões de algo antigo
+  const modo = S.modoExtra || (saldo().total<=-1 ? "adiantar" : "antigo");
+  const x = (modo==="antigo" ? an||ad : ad||an);
+  return x ? {...x, modo:x===an?"antigo":"adiantar", alternativa:!!(ad&&an)} : null;
+}
+/* "Encaixar automaticamente": a sessão ocupa a vaga aberta do mesmo bloco na semana (de preferência a do mesmo microtópico).
+   Se as vagas do bloco já fecharam, a semana está completa ou o assunto é de fora do Banestes: vira sessão extra (slot 0),
+   sem tirar a vaga de outro bloco. */
+function encaixar(data, topico, micro){
+  const w=slotsSemana(segunda(data)), b=blocoDe(topico);
+  const doBloco=w.itens.map((_,i)=>i).filter(i=>!w.feitos[i+1] && !w.itens[i].folga && (w.ms[i]?.b||blocoDe(w.itens[i].t))===b);
+  const i = doBloco.find(i=>micro && w.ms[i]?.m.id===micro) ?? doBloco[0];
+  return i==null ? 0 : i+1;
+}
 
 /* ---------- render: cabeçalho e Hoje ---------- */
 function renderHeader(){
   const h=hoje(), d=parse(h), f=faseDe(h), falta=diasAte(BN.prova,h);
-  document.getElementById("sub-hoje").textContent = `${DIASEM[d.getDay()][0].toUpperCase()+DIASEM[d.getDay()].slice(1)}, ${curta(h)} de ${d.getFullYear()} · ${f.n} · ${BN.horasDia} h por dia, seg a sáb`;
+  document.getElementById("sub-hoje").textContent = `${DIASEM[d.getDay()][0].toUpperCase()+DIASEM[d.getDay()].slice(1)}, ${curta(h)} de ${d.getFullYear()} · ${f.n} · meta de ${BN.horasDia*6} h por semana, no seu ritmo`;
   const As=PLANO.topicos.filter(t=>trDe(t)==="bn"&&t.p==="A"&&t.micros); let tot=0,fe=0; for(const t of As){tot+=t.micros.length; fe+=microsFeitos(t.id);}
   const hrs=horasBanestes();
   document.getElementById("hero-prog").innerHTML = [
@@ -1134,12 +1197,14 @@ function renderTiles(){
   const seg=segunda(hoje());
   const {feitos,itens}=slotsSemana(seg);
   const slotsFeitos=Object.keys(feitos).length, slotsTotal=itens.filter(it=>!it.folga).length;
-  let q=0,a=0,m=0; for(const s of S.sessoes){q+=s.questoes||0;a+=s.acertos||0;m+=s.minutos||0;}
+  const extras=S.sessoes.filter(s=>s.semana===seg && !s.slot && s.ciclo==="bn").length;
+  let q=0,a=0; for(const s of S.sessoes){q+=s.questoes||0;a+=s.acertos||0;}
   const p=pct(a,q);
   const pend=errosHoje().length;
+  const t=saldo().total;
   document.getElementById("tiles").innerHTML = [
-    {v:`${slotsFeitos}<small>/${slotsTotal}</small>`, l:"sessões na semana"},
-    {v:`${(m/60).toFixed(1).replace(".",",")}<small> h</small>`, l:"estudadas no total"},
+    {v:`${slotsFeitos}<small>/${slotsTotal}</small>`, l:extras?`sessões na semana · +${extras} extra${extras>1?"s":""}`:"sessões na semana"},
+    {v:`${fmtSaldo(t)}<small> h</small>`, l:t>=1?"à frente do plano":t>-1?"em dia com o plano":"atrás do plano", c:t>-1?"acc-g":t>-6?"acc-a":"acc-r"},
     {v:q?`${p}<small>%</small>`:"—", l:q?`acerto em ${q} questões`:"acerto nas questões", c:accCls(p)},
     {v:String(pend), l:pend===1?"revisão de erro hoje":"revisões de erro hoje", c:pend?"acc-r":""},
   ].map(t=>`<div class="tile"><div class="v ${t.c||""}">${t.v}</div><div class="l">${t.l}</div></div>`).join("");
@@ -1165,6 +1230,8 @@ function filaErros(b, desde){
 function microsDaSemana(seg, itens, feitos, fase){
   const fim=addDias(seg,6), usados={}, U=b=>usados[b]||(usados[b]=new Set());
   itens.forEach((_,i)=>{ const s=feitos[i+1]; if(s?.micro) U(blocoDe(s.topico)).add(s.micro); });
+  // sessões extras da semana também contam: o microtópico delas não volta como "falta registrar"
+  for(const s of S.sessoes) if(s.semana===seg && !s.slot && s.ciclo==="bn" && s.micro) U(blocoDe(s.topico)).add(s.micro);
   return itens.map((it,i)=>{
     const s=feitos[i+1];
     if(s){ const b=blocoDe(s.topico), m=s.micro&&microDe(b,s.micro); return m?{b,m,tipo:"feito"}:null; }
@@ -1188,7 +1255,7 @@ function passosDe(it, fase, a){
   if(it?.t==="bn_sim") return BN.passos.correcao;
   if(it?.t==="bn_rev") return BN.passos.revisao;
   if(a?.tipo==="novo"||a?.tipo==="estudado") return BN.passos.teoria;
-  if(a?.tipo==="erros") return BN.passos.questoes;
+  if(a?.tipo==="erros"||a?.tipo==="antigo") return BN.passos.questoes;
   return fase.id==="F1"||fase.id==="F2" ? BN.passos.teoria : BN.passos.questoes;
 }
 const btnMarcar = (a,cls,curto)=>{ const ok=!!estadoTopico(a.b).mt[a.m.id];
@@ -1197,25 +1264,29 @@ let PASSOS_ATUAIS = PLANO.passos;
 function renderCiclo(){
   const h=hoje(), seg=segunda(h), {bn,L,feitos,prox,itens,fase,ms}=slotsSemana(seg), f=faseDe(h);
   document.getElementById("cycle-title").textContent = bn ? `Ciclo da ${fase.n} · ${curta(seg)} a ${curta(addDias(seg,6))}` : `Semana ${L} · ${curta(seg)} a ${curta(addDias(seg,6))}`;
-  const cy=document.getElementById("cycle"); cy.classList.toggle("dupla",bn);
+  // No ciclo do Banestes as sessões não têm dia fixo: a meta é a semana.
+  const cy=document.getElementById("cycle"), dia=i=>bn?"":diaDoSlot(bn,i);
   cy.innerHTML = itens.map((it,i)=>{
     const n=i+1, fe=feitos[n], a=ms[i];
-    if(it.folga) return `<div class="slot folga"><span class="sn">–</span><span class="sd">${diaDoSlot(bn,i)}</span><span class="st"></span><span class="t">${esc(it.n)}</span></div>`;
+    if(it.folga) return `<div class="slot folga"><span class="sn">–</span><span class="sd">${dia(i)}</span><span class="st"></span><span class="t">${esc(it.n)}</span></div>`;
     const st = fe?"feita":a?.tipo==="estudado"?"estudado":n===prox?"próxima":a?.tipo==="erros"?"erros":"";
     const nome = fe&&!a ? (TOP[fe.topico]?.curto||TOP[fe.topico]?.nome||it.n||"") : nomeSlot(it,a);
     const btn = !fe && (a?.tipo==="novo"||a?.tipo==="estudado") ? `<span class="sb">${btnMarcar(a,"slot-btn",true)}</span>` : "";
-    return `<div class="slot ${fe?"done":""} ${n===prox?"next":""} ${it.leve?"leve":""} ${a?.tipo==="estudado"&&!fe?"estudado":""}" title="${esc(nome)}"><span class="sn">${fe?"✓":n}</span><span class="sd">${diaDoSlot(bn,i)}</span><span class="st">${st}</span><span class="t">${esc(nome)}</span>${btn}</div>`;
+    return `<div class="slot ${fe?"done":""} ${n===prox?"next":""} ${it.leve?"leve":""} ${a?.tipo==="estudado"&&!fe?"estudado":""}" title="${esc(nome)}"><span class="sn">${fe?"✓":n}</span><span class="sd">${dia(i)}</span><span class="st">${st}</span><span class="t">${esc(nome)}</span>${btn}</div>`;
   }).join("");
   document.getElementById("cycle-nota")?.remove();
-  if(bn) cy.insertAdjacentHTML("afterend", `<div id="cycle-nota"><div class="lembrete cycle-note"><b>${esc(fase.n)}:</b> ${esc(fase.t)}</div></div>`);
+  const plano = bn && h>=BN.fases[0].de && h<BN.prova;
+  if(bn) cy.insertAdjacentHTML("afterend", `<div id="cycle-nota">${plano?`<div class="lembrete cycle-note saldo">${conselhoSaldo(saldo())}</div>`:""}<div class="lembrete cycle-note"><b>${esc(fase.n)}:</b> ${esc(fase.t)}</div></div>`);
   const nc=document.getElementById("next-card");
   const ativas=itens.filter(it=>!it.folga).length;
-  if(!prox){
-    const dom = fase?.id==="F3" ? "Domingo é dia de simulado: 80 questões em 4 h." : fase?.id==="FF" ? "Domingo é a prova. Descanse." : "Domingo é descanso.";
+  const ex = !prox && plano ? sugestaoExtra(seg, fase) : null;
+  SUGESTAO = ex ? {b:ex.a.b, mid:ex.a.m.id} : null;
+  const dom = fase?.id==="F3" ? "Domingo é dia de simulado: 80 questões em 4 h." : fase?.id==="FF" ? "Domingo é a prova. Descanse." : "Domingo é descanso.";
+  if(!prox && !ex){
     nc.innerHTML = `<div class="eyebrow">Ciclo completo</div><div class="titulo">Semana fechada. ${dom}</div><p class="muted">As ${ativas} sessões da semana estão registradas.</p>`;
     PASSOS_ATUAIS = PLANO.passos;
   } else {
-    const it=itens[prox-1], a=bn?ms[prox-1]:null;
+    const it=ex?ex.it:itens[prox-1], a=ex?ex.a:bn?ms[prox-1]:null;
     PASSOS_ATUAIS = passosDe(bn?it:null, fase, a);
     const tp=TOP[it.t];
     const TIPO={novo:"microtópico novo", estudado:"já estudado · falta registrar a sessão", erros:"questões: microtópico com mais erros no caderno", fixo:"leitura"};
@@ -1225,7 +1296,11 @@ function renderCiclo(){
       micro = `<div class="muted" style="font-size:.9rem">${esc(TOP[a.b].nome)} · microtópico ${k} de ${Y} · ${microsFeitos(a.b)} de ${Y} concluídos${ne?` · <span class="acc-r">${ne} ${ne===1?"erro anotado":"erros anotados"}</span>`:""}</div>
         ${a.tipo==="novo"||a.tipo==="estudado"?`<div style="margin-top:10px">${btnMarcar(a,"btn small")}</div>`:""}`;
     }
-    nc.innerHTML = `<div class="eyebrow">Próxima sessão · ${prox} de ${itens.length}${it.leve?" · feriado":""}${a?` · ${TIPO[a.tipo]}`:""}</div>
+    const tipoTxt = a?.tipo==="antigo" ? `questões: visto ${a.dias==null?"na trilha antiga":`há ${a.dias} dias`}` : a?TIPO[a.tipo]:"";
+    nc.innerHTML = `${ex?`<div class="eyebrow">Semana fechada · as ${ativas} sessões estão registradas</div>
+      <p class="muted" style="margin:4px 0 10px;font-size:.9rem">${dom} Se quiser continuar, a sessão extra conta a seu favor no saldo.</p>
+      ${ex.alternativa?`<div class="seg" role="group" aria-label="Tipo de sessão extra">${[["adiantar","Adiantar a próxima semana"],["antigo","Questões de algo antigo"]].map(([k,l])=>`<button type="button" data-extra="${k}" aria-pressed="${ex.modo===k}">${l}</button>`).join("")}</div>`:""}`:""}
+      <div class="eyebrow">${ex?(ex.modo==="antigo"?"Sessão extra · revisão":"Sessão extra · adiantando a próxima semana"):`Próxima sessão · ${prox} de ${itens.length}`}${it.leve?" · feriado":""}${tipoTxt?` · ${tipoTxt}`:""}</div>
       <div class="titulo">${a?`<span class="bloco">${esc(TOP[a.b].curto)} →</span> ${esc(a.m.n)}`:esc(it.n||tp.nome)}</div>
       ${a?micro:`<div class="muted" style="font-size:.9rem">${esc(tp.nome)} · ${rotTrilha(tp)}${tp.oculto?"":`, prioridade ${tp.p}`}</div>`}
       <ol class="steps" id="steps">${PASSOS_ATUAIS.map((p,i)=>`<li data-i="${i}"><span class="mono">${p.de}–${p.ate} min</span><span>${esc(a?p.t.replace("[tópico do edital]",a.m.n).replace("do mesmo tópico","deste microtópico").replace("do tópico (","deste microtópico ("):p.t)}</span></li>`).join("")}</ol>
@@ -1238,8 +1313,9 @@ function renderCiclo(){
   }
   // pré-seleciona o formulário
   const sel=document.getElementById("s-slot");
-  if(!sel.dataset.touched){ sel.value = prox?String(prox):"0"; syncTopicoDoSlot(); }
+  if(!sel.dataset.touched){ sel.value = "auto"; syncTopicoDoSlot(); }
 }
+let SUGESTAO = null; // sessão extra sugerida quando a semana está fechada: {b, mid}
 const semanaDoForm = ()=>slotsSemana(segunda(document.getElementById("s-data").value||hoje()));
 const itensDoForm = ()=>semanaDoForm().itens;
 /* Select de microtópico (sessão e erro): lista os microtópicos do bloco escolhido. */
@@ -1266,7 +1342,9 @@ function microSugerido(topico){
 function renderFormSessao(){
   const sel=document.getElementById("s-slot");
   const cur=sel.value, w=semanaDoForm();
-  sel.innerHTML = w.itens.map((it,i)=>it.folga?"":`<option value="${i+1}">${i+1} · ${esc(nomeSlot(it,w.ms[i]))}</option>`).join("")+`<option value="0">Sessão avulsa (fora do ciclo)</option>`;
+  sel.innerHTML = `<option value="auto">Encaixar automaticamente</option>`
+    + w.itens.map((it,i)=>it.folga?"":`<option value="${i+1}">${i+1} · ${esc(nomeSlot(it,w.ms[i]))}${w.feitos[i+1]?" ✓":""}</option>`).join("")
+    + `<option value="0">Sessão extra (fora do ciclo)</option>`;
   if(cur && sel.querySelector(`option[value="${cur}"]`)) sel.value=cur;
   const opts = Object.keys(PLANO.trilhas).map(tr=>Object.keys(prioDe(tr)).map(p=>{
     const ts=PLANO.topicos.filter(t=>trDe(t)===tr&&t.p===p); if(!ts.length) return "";
@@ -1280,15 +1358,17 @@ function renderFormSessao(){
   opcoesMicro("e-micro", et.value, em.dataset.touched?em.value:microSugerido(et.value));
   const sm=document.getElementById("s-micro"); opcoesMicro("s-micro", document.getElementById("s-topico").value, sm.value);
 }
+/* Preenche assunto e microtópico com a sessão escolhida (ou, em "Encaixar automaticamente", com a próxima sugestão).
+   Depois que você troca o assunto à mão, ele fica como está até registrar ou escolher uma sessão. */
 function syncTopicoDoSlot(){
-  const n=Number(document.getElementById("s-slot").value);
-  if(!n) return;
-  const w=semanaDoForm(), it=w.itens[n-1], a=w.ms[n-1];
-  if(it && !it.folga){
-    const sf=w.feitos[n];
-    document.getElementById("s-topico").value = a?a.b:it.t;
-    opcoesMicro("s-micro", a?a.b:it.t, a?.m.id || sf?.micro || "");
-  }
+  if(document.getElementById("s-topico").dataset.touched) return;
+  const v=document.getElementById("s-slot").value, w=semanaDoForm(), n=v==="auto"?w.prox:Number(v);
+  let b=null, mid="";
+  if(n){ const it=w.itens[n-1], a=w.ms[n-1]; if(!it || it.folga) return; b=a?a.b:it.t; mid=a?.m.id || w.feitos[n]?.micro || ""; }
+  else if(v==="auto" && SUGESTAO && segunda(document.getElementById("s-data").value||hoje())===segunda(hoje())){ b=SUGESTAO.b; mid=SUGESTAO.mid; }
+  if(!b) return;
+  document.getElementById("s-topico").value=b;
+  opcoesMicro("s-micro", b, mid);
 }
 
 /* ---------- timer da sessão ---------- */
@@ -1463,7 +1543,7 @@ function renderHistorico(){
   const ts=document.getElementById("t-sessoes");
   ts.innerHTML = ss.length ? ss.map(s=>{const p=pct(s.acertos,s.questoes);const L=letraSemana(s.semana);
     return `<div class="h-row"><div class="h-date"><b>${parse(s.data).getDate()}</b><span>${MESES[parse(s.data).getMonth()]}</span></div>
-      <div class="h-main"><div class="h-t">${esc(TOP[s.topico]?.nome||s.topico)}</div>${microDe(s.topico,s.micro)?`<div class="h-micro">${esc(microDe(s.topico,s.micro).n)}</div>`:""}<div class="h-m"><span class="chip">${!s.slot?"avulsa":s.ciclo==="bn"?`sessão ${s.slot}`:`${L}${s.slot}`}</span><span class="num">${s.minutos||0} min</span><span class="num">${s.questoes||0} questões</span>${p!=null?`<span class="num ${accCls(p)}">${p}%</span>`:""}</div></div>
+      <div class="h-main"><div class="h-t">${esc(TOP[s.topico]?.nome||s.topico)}</div>${microDe(s.topico,s.micro)?`<div class="h-micro">${esc(microDe(s.topico,s.micro).n)}</div>`:""}<div class="h-m"><span class="chip">${!s.slot?(s.ciclo==="bn"?"extra":"avulsa"):s.ciclo==="bn"?`sessão ${s.slot}`:`${L}${s.slot}`}</span><span class="num">${s.minutos||0} min</span><span class="num">${s.questoes||0} questões</span>${p!=null?`<span class="num ${accCls(p)}">${p}%</span>`:""}</div></div>
       <button class="btn ghost small" type="button" data-del-sessao="${s.id}">Apagar</button></div>`}).join("")
     : `<div class="empty">Nenhuma sessão registrada. Use o formulário da aba Hoje no fim de cada sessão.</div>`;
   const sem={};
@@ -1520,7 +1600,7 @@ function renderBanestes(){
     </div>
     <div>
       <h3>Divisão do tempo até a prova</h3>
-      <p class="muted" style="margin:2px 0 10px;font-size:.88rem">${BN.horasDia} h por dia, de segunda a sábado, de 17/11 a 19/02, com 25/12 e 01/01 reduzidos a 1 sessão leve: ${HORAS_TOTAL} h. “Meta” aplica a sua divisão a essas horas; “Nos ciclos” é o que os ciclos das 4 fases entregam. Os 3 simulados de domingo (4 h cada, 12 h) ficam fora dessa conta; os 3% de “Simulados” são para corrigi-los.</p>
+      <p class="muted" style="margin:2px 0 10px;font-size:.88rem">Em média ${BN.horasDia} h por dia, de segunda a sábado, de 17/11 a 19/02, com 25/12 e 01/01 reduzidos a 1 sessão leve: ${HORAS_TOTAL} h. “Meta” aplica a sua divisão a essas horas; “Nos ciclos” é o que os ciclos das 4 fases entregam. Os 3 simulados de domingo (4 h cada, 12 h) ficam fora dessa conta; os 3% de “Simulados” são para corrigi-los.</p>
       <div class="tablewrap"><table>
         <thead><tr><th>Matéria</th><th class="num">%</th><th class="num">Meta</th><th class="num">Nos ciclos</th></tr></thead>
         <tbody>${horas.map(x=>{const dif=x.pl-x.h; return `<tr><td>${esc(x.n)}</td><td class="num">${x.p}%</td><td class="num">${fmtH(Math.round(x.h*2)/2)} h</td><td class="num">${fmtH(x.pl)} h <span class="muted" style="font-size:.78rem">(${Math.round(Math.abs(dif)*2)===0?"=":(dif>0?"+":"−")+fmtH(Math.round(Math.abs(dif)*2)/2)})</span></td></tr>`}).join("")}
@@ -1560,9 +1640,9 @@ addEventListener("hashchange", mostrarAba);
 /* ---------- eventos ---------- */
 function toast(id,msg){ const el=document.getElementById(id); el.textContent=msg; clearTimeout(el._t); el._t=setTimeout(()=>el.textContent="",3000); }
 
-document.getElementById("s-slot").addEventListener("change",e=>{e.target.dataset.touched="1"; syncTopicoDoSlot();});
+document.getElementById("s-slot").addEventListener("change",e=>{e.target.dataset.touched="1"; delete document.getElementById("s-topico").dataset.touched; syncTopicoDoSlot();});
 document.getElementById("s-data").addEventListener("change",()=>{renderFormSessao(); syncTopicoDoSlot();});
-document.getElementById("s-topico").addEventListener("change",e=>{ const b=blocoDe(e.target.value), B=TOP[b]; opcoesMicro("s-micro", b, B?.micros ? microSugerido(b) : ""); });
+document.getElementById("s-topico").addEventListener("change",e=>{ e.target.dataset.touched="1"; const b=blocoDe(e.target.value), B=TOP[b]; opcoesMicro("s-micro", b, B?.micros ? microSugerido(b) : ""); });
 document.getElementById("s-micro").addEventListener("change",syncMarcar);
 document.getElementById("e-topico").addEventListener("change",e=>{ e.target.dataset.touched="1"; delete document.getElementById("e-micro").dataset.touched; opcoesMicro("e-micro", e.target.value, microSugerido(e.target.value)); });
 document.getElementById("e-micro").addEventListener("change",e=>{ e.target.dataset.touched="1"; });
@@ -1572,16 +1652,18 @@ document.getElementById("f-sessao").addEventListener("submit",e=>{
   const data=document.getElementById("s-data").value||hoje();
   const q=Math.max(0,parseInt(document.getElementById("s-q").value)||0);
   const a=Math.min(q,Math.max(0,parseInt(document.getElementById("s-a").value)||0));
-  const micro=document.getElementById("s-micro").value;
-  const s={id:novoId(), data, semana:segunda(data), slot:Number(document.getElementById("s-slot").value)||0, topico:document.getElementById("s-topico").value, ...(micro?{micro}:{}), ...(cicloBn(segunda(data))?{ciclo:"bn"}:{}), minutos:Math.max(0,parseInt(document.getElementById("s-min").value)||0), questoes:q, acertos:a, criado:Date.now()};
+  const micro=document.getElementById("s-micro").value, topico=document.getElementById("s-topico").value;
+  const auto=document.getElementById("s-slot").value==="auto";
+  const slot=auto ? encaixar(data, topico, micro) : Number(document.getElementById("s-slot").value)||0;
+  const s={id:novoId(), data, semana:segunda(data), slot, topico, ...(micro?{micro}:{}), ...(cicloBn(segunda(data))?{ciclo:"bn"}:{}), minutos:Math.max(0,parseInt(document.getElementById("s-min").value)||0), questoes:q, acertos:a, criado:Date.now()};
   S.sessoes.push(s); const {id,...body}=s; gravar("sessoes/"+id, body);
   const b=blocoDe(s.topico);
   if(micro && document.getElementById("s-marcar").checked && !document.getElementById("s-marcar-box").hidden) marcarMicro(b, micro, data);
   if(estadoTopico(s.topico).status===0) salvarTopico(s.topico,{status:1});
   document.getElementById("s-q").value=""; document.getElementById("s-a").value="";
-  delete document.getElementById("s-slot").dataset.touched;
+  delete document.getElementById("s-slot").dataset.touched; delete document.getElementById("s-topico").dataset.touched;
   pararTimer(); T.rest=DUR;
-  renderAll(); toast("s-toast","Sessão registrada");
+  renderAll(); toast("s-toast", !auto ? "Sessão registrada" : slot ? `Sessão registrada na sessão ${slot} do ciclo` : "Sessão registrada como extra");
 });
 document.getElementById("f-erro").addEventListener("submit",e=>{
   e.preventDefault();
@@ -1593,8 +1675,9 @@ document.getElementById("f-erro").addEventListener("submit",e=>{
   renderErros(); renderTiles(); renderAssuntos(); toast("e-toast",`Erro anotado. Primeira revisão em ${curta(addDias(er.data,1))}.`);
 });
 document.addEventListener("click",e=>{
-  const t=e.target.closest("[data-toggle],[data-st],[data-rev],[data-del-erro],[data-del-sessao],[data-marcar],#f-trilha button,#f-prio button,#f-erros button");
+  const t=e.target.closest("[data-toggle],[data-st],[data-rev],[data-del-erro],[data-del-sessao],[data-marcar],[data-extra],#f-trilha button,#f-prio button,#f-erros button");
   if(!t) return;
+  if(t.dataset.extra){ S.modoExtra=t.dataset.extra; delete document.getElementById("s-topico").dataset.touched; renderCiclo(); return; }
   if(t.dataset.marcar){ const [b,mid]=t.dataset.marcar.split(":"); marcarMicro(b, mid, estadoTopico(b).mt[mid]?null:hoje()); renderAll(); return; }
   if(t.dataset.toggle){ const id=t.dataset.toggle; S.abertos.has(id)?S.abertos.delete(id):S.abertos.add(id); renderAssuntos(); return; }
   if(t.dataset.st){ const [id,v]=t.dataset.st.split(":"); salvarTopico(id,{status:Number(v)}); renderAssuntos(); return; }
